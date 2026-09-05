@@ -349,12 +349,21 @@ footer{border-top:1px solid var(--border-hairline); padding:var(--xxl) 0 var(--x
 .admin-stat-card{background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); padding:var(--lg);}
 .admin-stat-value{font-family:var(--font-mono); font-size:1.5rem; margin-top:var(--xs);}
 .admin-table-wrap{overflow-x:auto; border:1px solid var(--border-subtle);}
-table.admin-table{width:100%; border-collapse:collapse; min-width:640px;}
+table.admin-table{width:100%; border-collapse:collapse; min-width:520px;}
 .admin-table th{text-align:left; font-family:var(--font-mono); font-size:0.6875rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-tertiary); padding:var(--sm) var(--md); border-bottom:1px solid var(--border-hairline); background:var(--bg-canvas);}
 .admin-table td{padding:var(--md); border-bottom:1px solid rgba(255,255,255,0.06); font-size:0.8125rem;}
 .admin-table tr:hover td{background:#141414;}
 .status-pill{font-family:var(--font-mono); font-size:0.6875rem; padding:3px 8px; border:1px solid var(--border-hairline); text-transform:uppercase; display:inline-block;}
 .admin-section-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--lg); flex-wrap:wrap; gap:var(--md);}
+/* Order cards for small screens */
+.order-cards{display:none; flex-direction:column; gap:var(--md);}
+.order-card{background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); padding:var(--md);}
+.order-card-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--xs);}
+.order-card-label{font-family:var(--font-mono); font-size:0.6rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-tertiary);}
+@media(max-width:600px){
+  .admin-orders-table-wrap{display:none;}
+  .order-cards{display:flex;}
+}
 
 /* Login */
 .auth-box{max-width:400px; margin:0 auto;}
@@ -1236,14 +1245,21 @@ async function handlePlaceOrder(e){
   btn.textContent = "Placing Order...";
   btn.disabled = true;
 
+  // Open the WhatsApp tab NOW (before any await) so the browser
+  // treats it as a direct result of the user's click and never blocks it.
+  const waTab = window.open('about:blank', '_blank');
+
   try {
     const res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(order)
     });
-    
+
     if (!res.ok) throw new Error("API Error");
+
+    // Redirect the already-open tab to the real WhatsApp URL
+    if (waTab) waTab.location.href = buildWhatsAppUrl(order);
 
     lastOrder = order;
     cart = [];
@@ -1251,25 +1267,34 @@ async function handlePlaceOrder(e){
     renderCartBadge();
     window.location.hash = "#/checkout";
     render();
-    window.open(buildWhatsAppUrl(order), "_blank");
   } catch (err) {
+    if (waTab) waTab.close();
     btn.textContent = prevText;
     btn.disabled = false;
     showToast("Something went wrong. Please try again.");
   }
-  
+
   return false;
 }
 
 function renderOrderConfirmation(){
   const order = lastOrder;
+  // Auto-open WhatsApp if the tab was blocked for any reason
+  setTimeout(() => {
+    const waUrl = buildWhatsAppUrl(order);
+    const indicator = document.getElementById('wa-send-indicator');
+    if (indicator) indicator.innerHTML = `<a href="${waUrl}" target="_blank" rel="noopener" style="color:var(--state-success); text-decoration:underline;">Tap here if WhatsApp didn't open automatically</a>`;
+  }, 800);
+
   return `
   <section class="section container center-text" style="max-width:520px;">
     <p class="t-label-mono" style="color:var(--state-success);">ORDER CONFIRMED</p>
     <h1 class="t-headline-xl mt-sm mb-md">${order.orderId}</h1>
-    <p class="t-body-lg text-secondary mb-lg">Thank you for your order. We'll contact you to confirm your order.</p>
+    <p class="t-body-lg text-secondary mb-sm">Thank you, ${order.customerName}. Your order has been placed.</p>
+    <p class="t-body-sm text-secondary mb-lg">A WhatsApp message with your order details has been sent to our team. We'll confirm shortly.</p>
+    <p id="wa-send-indicator" class="t-body-sm mb-lg" style="min-height:1.4em;"></p>
     <div style="display:flex; flex-direction:column; gap:var(--sm); max-width:320px; margin:0 auto;">
-      <button class="btn btn-primary" onclick="window.open(buildWhatsAppUrl(lastOrder),'_blank')">Open WhatsApp</button>
+      <button class="btn btn-primary" onclick="window.open(buildWhatsAppUrl(lastOrder),'_blank')">Resend on WhatsApp</button>
       <a href="#/collection" class="btn btn-secondary" onclick="lastOrder=null">Continue Shopping</a>
     </div>
   </section>`;
@@ -1419,21 +1444,54 @@ function renderAdminDashboard(){
 }
 
 function adminOrdersTable(orders){
-  return `<div class="admin-table-wrap"><table class="admin-table">
-    <thead><tr><th>Order ID</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th></tr></thead>
+  const rows = orders.map(o=>{
+    const id      = o.orderId      || o.id       || '—';
+    const name    = o.customerName || o.customer || '—';
+    const phone   = o.phone        || '—';
+    const date    = o.createdAt    || o.date     || '—';
+    const dateStr = date === '—' ? '—' : new Date(date).toLocaleDateString('en-GB');
+    return { id, name, phone, date: dateStr, total: o.total, status: o.status };
+  });
+
+  const tableHtml = `<div class="admin-table-wrap admin-orders-table-wrap"><table class="admin-table">
+    <thead><tr><th>Order ID</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr></thead>
     <tbody>
-      ${orders.map(o=>{
-        const id   = o.orderId   || o.id       || "—";
-        const name = o.customerName || o.customer || "—";
-        const date = o.createdAt   || o.date     || "—";
-        const dateStr = date === "—" ? "—" : new Date(date).toLocaleDateString('en-GB');
-        return `<tr onclick="window.location.hash='#/admin/order/${id}'" style="cursor:pointer;">
-          <td class="t-label-mono">${id}</td><td>${name}</td><td>${dateStr}</td><td class="t-price">${formatPrice(o.total)}</td>
-          <td><span class="status-pill" style="color:${statusPillColor(o.status)}; border-color:${statusPillColor(o.status)}55;">${o.status}</span></td>
-        </tr>`;
-      }).join("")}
+      ${rows.map(r=>`<tr>
+        <td class="t-label-mono" onclick="window.location.hash='#/admin/order/${r.id}'" style="cursor:pointer;">${r.id}</td>
+        <td onclick="window.location.hash='#/admin/order/${r.id}'" style="cursor:pointer;">${r.name}<br><span class="text-tertiary" style="font-size:0.7rem;">${r.phone}</span></td>
+        <td onclick="window.location.hash='#/admin/order/${r.id}'" style="cursor:pointer;">${r.date}</td>
+        <td class="t-price" onclick="window.location.hash='#/admin/order/${r.id}'" style="cursor:pointer;">${formatPrice(r.total)}</td>
+        <td onclick="window.location.hash='#/admin/order/${r.id}'" style="cursor:pointer;"><span class="status-pill" style="color:${statusPillColor(r.status)}; border-color:${statusPillColor(r.status)}55;">${r.status}</span></td>
+        <td><button onclick="deleteOrder('${r.id}')" style="font-family:var(--font-mono); font-size:0.65rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--state-sale); background:none; border:none; cursor:pointer; padding:4px 0;">Delete</button></td>
+      </tr>`).join('')}
     </tbody>
   </table></div>`;
+
+  const cardsHtml = `<div class="order-cards">
+    ${rows.map(r=>`<div class="order-card">
+      <div class="order-card-row">
+        <span class="order-card-label">Order ID</span>
+        <span class="status-pill" style="color:${statusPillColor(r.status)}; border-color:${statusPillColor(r.status)}55;">${r.status}</span>
+      </div>
+      <p class="t-label-mono" style="font-size:0.75rem; margin-bottom:var(--xs);" onclick="window.location.hash='#/admin/order/${r.id}'" style="cursor:pointer;">${r.id}</p>
+      <div class="order-card-row" style="margin-top:var(--sm);">
+        <div>
+          <p style="font-size:0.8rem; font-weight:500;">${r.name}</p>
+          <p class="text-tertiary" style="font-size:0.72rem;">${r.phone}</p>
+        </div>
+        <div style="text-align:right;">
+          <p class="t-price" style="font-size:0.9rem;">${formatPrice(r.total)}</p>
+          <p class="text-tertiary" style="font-size:0.7rem;">${r.date}</p>
+        </div>
+      </div>
+      <div style="display:flex; gap:var(--sm); margin-top:var(--md);">
+        <button onclick="window.location.hash='#/admin/order/${r.id}'" style="flex:1; font-family:var(--font-mono); font-size:0.65rem; letter-spacing:0.06em; text-transform:uppercase; padding:8px; background:var(--bg-canvas); border:1px solid var(--border-subtle); color:var(--text-primary); cursor:pointer;">View</button>
+        <button onclick="deleteOrder('${r.id}')" style="font-family:var(--font-mono); font-size:0.65rem; letter-spacing:0.06em; text-transform:uppercase; padding:8px 14px; background:none; border:1px solid var(--state-sale); color:var(--state-sale); cursor:pointer;">Delete</button>
+      </div>
+    </div>`).join('')}
+  </div>`;
+
+  return tableHtml + cardsHtml;
 }
 
 function renderAdminOrders(){
@@ -1527,6 +1585,19 @@ async function updateOrderStatus(orderId, status) {
     });
   } catch(e) {
     showToast("Failed to update status");
+  }
+}
+
+async function deleteOrder(orderId) {
+  if (!confirm(`Delete order ${orderId}? This cannot be undone.`)) return;
+  try {
+    const res = await fetch('/api/orders?id=' + encodeURIComponent(orderId), { method: 'DELETE' });
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+    MOCK_ORDERS = MOCK_ORDERS.filter(o => (o.orderId || o.id) !== orderId);
+    render();
+    showToast('Order deleted');
+  } catch(e) {
+    showToast('Failed to delete order: ' + e.message);
   }
 }
 
