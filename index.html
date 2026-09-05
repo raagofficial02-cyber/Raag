@@ -516,94 +516,16 @@ const GLYPHS = {
   hoodie: `<svg class="garment-svg" viewBox="0 0 100 120"><path d="M50 8 C34 8 30 20 30 28 L14 40 L22 58 L30 50 L30 112 H70 V50 L78 58 L86 40 L70 28 C70 20 66 8 50 8 Z"/><path d="M38 26 C38 36 62 36 62 26"/></svg>`
 };
 
-let PRODUCTS = [
-  {
-    id: "archive-jacket",
-    name: "Archive Overshirt",
-    category: "Outerwear",
-    price: 18500,
-    compareAt: null,
-    glyph: GLYPHS.jacket,
-    images: [],
-    sizes: ["S","M","L","XL"],
-    outOfStockSizes: ["S"],
-    bestSeller: true,
-    limited: true,
-    soldOut: false,
-    edition: "DROP 004 // 120 UNITS",
-    description: "An oversized wool-blend overshirt built with a dropped shoulder and a single interior seam running the length of the spine. Made to be worn open, layered, or fastened to the collar.",
-    details: [
-      "72% wool, 28% technical nylon blend",
-      "Dropped shoulder, boxed fit",
-      "Raw-edge interior seam detail",
-      "Horn-effect buttons, tonal stitching",
-      "Made in limited run of 120 units"
-    ],
-    sizeGuide: "Fits true to size with room for a mid-layer. Size down for a closer silhouette. Model is 6'1\" wearing size M.",
-    shipping: "Dispatched within 2–4 business days. Delivery across Pakistan in 3–6 business days via courier, cash on delivery.",
-    returns: "Exchanges accepted within 7 days of delivery if the item is unworn and tagged. Contact us on WhatsApp to arrange."
-  },
-  {
-    id: "form-cargo",
-    name: "Form Cargo Trouser",
-    category: "Bottoms",
-    price: 13500,
-    compareAt: 15000,
-    glyph: GLYPHS.cargo,
-    images: [],
-    sizes: ["30","32","34","36"],
-    outOfStockSizes: [],
-    bestSeller: true,
-    limited: false,
-    soldOut: false,
-    edition: "DROP 004 // 200 UNITS",
-    description: "A technical cargo trouser cut wide through the leg and tapered at the ankle. Structured utility pockets sit flush against the leg rather than stacked on top, keeping the line clean.",
-    details: [
-      "Heavyweight cotton twill, 320gsm",
-      "Tapered leg, mid-rise",
-      "Flush cargo pockets with concealed zips",
-      "Articulated knee panelling",
-      "Adjustable internal waist tabs"
-    ],
-    sizeGuide: "Sized by waist inches. True to size. Model is 6'0\" wearing size 32.",
-    shipping: "Dispatched within 2–4 business days. Delivery across Pakistan in 3–6 business days via courier, cash on delivery.",
-    returns: "Exchanges accepted within 7 days of delivery if the item is unworn and tagged. Contact us on WhatsApp to arrange."
-  },
-  {
-    id: "monolith-hoodie",
-    name: "Monolith Hoodie",
-    category: "Knitwear",
-    price: 11000,
-    compareAt: null,
-    glyph: GLYPHS.hoodie,
-    images: [],
-    sizes: ["S","M","L","XL"],
-    outOfStockSizes: ["XL"],
-    bestSeller: true,
-    limited: false,
-    soldOut: false,
-    edition: "DROP 004 // 250 UNITS",
-    description: "A heavyweight hoodie built from a single run of brushed-back fleece. Set-in sleeves, a deep kangaroo pocket, and a hood cut to sit close to the neck rather than fall loose.",
-    details: [
-      "480gsm brushed cotton fleece",
-      "Set-in sleeve construction",
-      "Ribbed cuffs and hem",
-      "Reinforced kangaroo pocket",
-      "Garment-dyed for tonal depth"
-    ],
-    sizeGuide: "Boxy, relaxed fit. Size down for a slimmer silhouette. Model is 6'1\" wearing size M.",
-    shipping: "Dispatched within 2–4 business days. Delivery across Pakistan in 3–6 business days via courier, cash on delivery.",
-    returns: "Exchanges accepted within 7 days of delivery if the item is unworn and tagged. Contact us on WhatsApp to arrange."
+let PRODUCTS = [];
+async function loadProducts() {
+  try {
+    const res = await fetch('/api/products');
+    if (res.ok) PRODUCTS = await res.json();
+  } catch (e) {
+    console.error("Failed to load products", e);
   }
-];
-try {
-  const savedProducts = localStorage.getItem("raag_products");
-  if(savedProducts) PRODUCTS = JSON.parse(savedProducts);
-} catch(e){}
-
-function saveProducts() {
-  try { localStorage.setItem("raag_products", JSON.stringify(PRODUCTS)); } catch(e){}
 }
+
 
 function getProduct(id){ return PRODUCTS.find(p => p.id === id); }
 function formatPrice(n){ return STORE_CONFIG.currency + " " + n.toLocaleString("en-PK"); }
@@ -1272,7 +1194,7 @@ function renderCheckout(){
   `;
 }
 
-function handlePlaceOrder(e){
+async function handlePlaceOrder(e){
   e.preventDefault();
   const form = e.target;
   const data = Object.fromEntries(new FormData(form).entries());
@@ -1300,6 +1222,7 @@ function handlePlaceOrder(e){
     city: data.city.trim(),
     province: data.province,
     postalCode: (data.postalCode||"").trim(),
+    whatsapp: (data.whatsapp||"").trim(),
     notes: (data.notes||"").trim(),
     items: cart.map(l=>({productId:l.productId, size:l.size, qty:l.qty})),
     subtotal, deliveryCharges: delivery, total: subtotal+delivery,
@@ -1308,27 +1231,33 @@ function handlePlaceOrder(e){
     status: "New"
   };
 
-  lastOrder = order;
-  MOCK_ORDERS.unshift(orderToAdminRow(order));
-  saveOrders();
-  
-  let existingCustomer = MOCK_CUSTOMERS.find(c => c.phone === order.phone);
-  if(existingCustomer) {
-     existingCustomer.orders += 1;
-     existingCustomer.spent += order.total;
-  } else {
-     MOCK_CUSTOMERS.push({
-         name: order.customerName, phone: order.phone, city: order.city, orders: 1, spent: order.total
-     });
+  const btn = form.querySelector('button[type="submit"]');
+  const prevText = btn.textContent;
+  btn.textContent = "Placing Order...";
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order)
+    });
+    
+    if (!res.ok) throw new Error("API Error");
+
+    lastOrder = order;
+    cart = [];
+    saveCart();
+    renderCartBadge();
+    window.location.hash = "#/checkout";
+    render();
+    window.open(buildWhatsAppUrl(order), "_blank");
+  } catch (err) {
+    btn.textContent = prevText;
+    btn.disabled = false;
+    showToast("Something went wrong. Please try again.");
   }
-  saveCustomers();
   
-  cart = [];
-  saveCart();
-  renderCartBadge();
-  window.location.hash = "#/checkout";
-  render();
-  window.open(buildWhatsAppUrl(order), "_blank");
   return false;
 }
 
@@ -1382,34 +1311,18 @@ function orderToAdminRow(order){
   };
 }
 
-let MOCK_ORDERS = [
-  { id:"RAAG-20260830-1187", customer:"Hamza Sheikh", date:"30/08/2026", items:"Monolith Hoodie (M) x1", total:11350, status:"Delivered", phone:"0300-1234567", email:"", address:"House 12, Street 4", city:"Lahore", province:"Punjab" },
-  { id:"RAAG-20260901-4423", customer:"Ayesha Raza", date:"01/09/2026", items:"Archive Overshirt (L) x1, Form Cargo Trouser (32) x1", total:32350, status:"Shipped", phone:"0321-9876543", email:"ayesha@example.com", address:"Flat 3B, Clifton Block 5", city:"Karachi", province:"Sindh" },
-  { id:"RAAG-20260903-0087", customer:"Bilal Ahmed", date:"03/09/2026", items:"Form Cargo Trouser (34) x1", total:13850, status:"Processing", phone:"0333-5551212", email:"", address:"Street 9, F-10", city:"Islamabad", province:"Islamabad Capital Territory" },
-  { id:"RAAG-20260904-5502", customer:"Zainab Malik", date:"04/09/2026", items:"Monolith Hoodie (S) x2", total:22350, status:"New", phone:"0345-2223344", email:"", address:"House 45, Model Town", city:"Lahore", province:"Punjab" }
-];
-try {
-  const savedOrders = localStorage.getItem("raag_orders");
-  if(savedOrders) MOCK_ORDERS = JSON.parse(savedOrders);
-} catch(e){}
+let MOCK_ORDERS = [];
+let MOCK_CUSTOMERS = [];
 
-function saveOrders() {
-  try { localStorage.setItem("raag_orders", JSON.stringify(MOCK_ORDERS)); } catch(e){}
-}
-
-let MOCK_CUSTOMERS = [
-  { name:"Hamza Sheikh", phone:"0300-1234567", city:"Lahore", orders:1, spent:11350 },
-  { name:"Ayesha Raza", phone:"0321-9876543", city:"Karachi", orders:1, spent:32350 },
-  { name:"Bilal Ahmed", phone:"0333-5551212", city:"Islamabad", orders:1, spent:13850 },
-  { name:"Zainab Malik", phone:"0345-2223344", city:"Lahore", orders:1, spent:22350 }
-];
-try {
-  const savedCustomers = localStorage.getItem("raag_customers");
-  if(savedCustomers) MOCK_CUSTOMERS = JSON.parse(savedCustomers);
-} catch(e){}
-
-function saveCustomers() {
-  try { localStorage.setItem("raag_customers", JSON.stringify(MOCK_CUSTOMERS)); } catch(e){}
+async function loadAdminData() {
+  try {
+    const oRes = await fetch('/api/orders');
+    if (oRes.ok) MOCK_ORDERS = await oRes.json();
+    const cRes = await fetch('/api/customers');
+    if (cRes.ok) MOCK_CUSTOMERS = await cRes.json();
+  } catch (e) {
+    console.error("Failed to load admin data", e);
+  }
 }
 
 const ADMIN_TABS = [
@@ -1436,11 +1349,20 @@ let adminAuthed = false;
 // account that actually exists is the admin account — entering those
 // credentials here signs into /admin. Regular customer accounts are
 // not implemented yet (guest checkout covers shopping).
-function handleSiteLogin(e){
+async function handleSiteLogin(e){
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target).entries());
+  
+  const btn = e.target.querySelector('button[type="submit"]');
+  const prevText = btn.textContent;
+  
   if(data.email === ADMIN_CREDENTIALS.email && data.password === ADMIN_CREDENTIALS.password){
+    btn.textContent = "Loading...";
+    btn.disabled = true;
     adminAuthed = true;
+    await loadAdminData();
+    btn.textContent = prevText;
+    btn.disabled = false;
     window.location.hash = "#/admin/dashboard";
   } else {
     document.getElementById("siteLoginError").style.display = "block";
@@ -1575,11 +1497,26 @@ function renderAdminOrderDetail(orderId){
     </div>
     <div>
       <p class="t-label-caps text-secondary mb-sm">Status</p>
-      <select onchange="o.status=this.value; saveOrders(); render();" style="border:1px solid var(--border-hairline); height:40px; padding:0 var(--sm);">
+      <select onchange="updateOrderStatus('${o.id}', this.value)" style="border:1px solid var(--border-hairline); height:40px; padding:0 var(--sm);">
         ${["New","Confirmed","Processing","Shipped","Delivered","Cancelled"].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join("")}
       </select>
     </div>
   </div>`;
+}
+
+async function updateOrderStatus(orderId, status) {
+  const o = MOCK_ORDERS.find(x=>x.id===orderId);
+  if(o) o.status = status;
+  render();
+  try {
+    await fetch('/api/orders', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, status })
+    });
+  } catch(e) {
+    showToast("Failed to update status");
+  }
 }
 
 function renderAdminProducts(){
@@ -1596,7 +1533,10 @@ function renderAdminProducts(){
         <td class="t-price">${formatPrice(p.price)}</td>
         <td>${p.sizes.map(s=>p.outOfStockSizes.includes(s)?`<s class="text-tertiary">${s}</s>`:s).join(" · ")}</td>
         <td><span class="status-pill" style="color:${p.soldOut?'#ff3b30':'#34c759'};">${p.soldOut?'Sold Out':'Active'}</span></td>
-        <td><button class="btn-link t-body-sm" onclick="openAdminProductModal('${p.id}')">Edit</button></td>
+        <td>
+          <button class="btn-link t-body-sm" onclick="openAdminProductModal('${p.id}')">Edit</button>
+          <button class="btn-link t-body-sm" style="color:var(--state-sale); margin-left:var(--sm);" onclick="openDeleteProductModal('${p.id}')">Delete</button>
+        </td>
       </tr>`).join("")}
     </tbody>
   </table></div>`;
@@ -1659,19 +1599,61 @@ function closeAdminModal(){
   document.getElementById("adminProductModal").style.display = "none";
 }
 
-function saveAdminProduct(){
+let productToDelete = null;
+function openDeleteProductModal(id) {
+  productToDelete = id;
+  if (!document.getElementById("deleteProductModal")) {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="drawer-backdrop" id="deleteModalBackdrop" style="z-index:900;" onclick="closeDeleteProductModal()"></div>
+      <div class="admin-modal" id="deleteProductModal" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); width:calc(100% - 2rem); max-width:400px; z-index:901; display:none; flex-direction:column; padding:var(--lg);">
+        <h2 class="t-headline-md mb-md">Delete Product?</h2>
+        <p class="t-body-sm mb-lg">Delete this product? This action cannot be undone.</p>
+        <div style="display:flex; justify-content:flex-end; gap:var(--sm);">
+          <button class="btn btn-secondary" onclick="closeDeleteProductModal()">Cancel</button>
+          <button class="btn btn-primary" style="background:var(--state-sale);" onclick="confirmDeleteProduct()">Delete</button>
+        </div>
+      </div>
+    `);
+  }
+  document.getElementById("deleteModalBackdrop").classList.add("open");
+  document.getElementById("deleteProductModal").style.display = "flex";
+}
+
+function closeDeleteProductModal() {
+  document.getElementById("deleteModalBackdrop").classList.remove("open");
+  document.getElementById("deleteProductModal").style.display = "none";
+}
+
+async function confirmDeleteProduct() {
+  if (!productToDelete) return;
+  const res = await fetch('/api/products?id=' + productToDelete, { method: 'DELETE' });
+  if (res.ok) {
+    PRODUCTS = PRODUCTS.filter(p => p.id !== productToDelete);
+    render();
+    showToast("Product deleted");
+  } else {
+    showToast("Failed to delete product");
+  }
+  closeDeleteProductModal();
+}
+
+async function saveAdminProduct(){
   const name = document.getElementById("adminProdName").value;
   const price = parseInt(document.getElementById("adminProdPrice").value, 10);
   const soldOut = document.getElementById("adminProdStatus").value === "soldout";
   
+  let p = null;
+  let isEdit = false;
+  
   if(editingProductId){
-    const p = getProduct(editingProductId);
+    p = getProduct(editingProductId);
     p.name = name || p.name;
     p.price = isNaN(price) ? p.price : price;
     p.soldOut = soldOut;
+    isEdit = true;
   } else {
     const newId = "prod-" + Math.floor(Math.random()*10000);
-    PRODUCTS.unshift({
+    p = {
       id: newId,
       name: name || "New Product",
       category: "Category",
@@ -1690,12 +1672,26 @@ function saveAdminProduct(){
       sizeGuide: "Fits true to size.",
       shipping: "Standard shipping.",
       returns: "Standard returns."
-    });
+    };
+    PRODUCTS.unshift(p);
   }
-  saveProducts();
+  
+  // Optimistically update UI
   closeAdminModal();
   render();
-  showToast("Changes saved locally");
+  
+  // Call API
+  try {
+    const res = await fetch('/api/products', {
+      method: isEdit ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(p)
+    });
+    if (!res.ok) throw new Error("API Error");
+    showToast("Changes saved");
+  } catch(e) {
+    showToast("Failed to save product to database");
+  }
 }
 
 
@@ -1769,9 +1765,13 @@ function render(){
 window.__logoSrc = "data:image/png;base64,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";
 document.getElementById("navLogoImg").src = window.__logoSrc;
 
-navigate();
-renderCartBadge();
-renderCartBadge();
+async function bootstrap() {
+  await loadProducts();
+  navigate();
+  renderCartBadge();
+}
+
+bootstrap();
 </script>
 </body>
 </html>
