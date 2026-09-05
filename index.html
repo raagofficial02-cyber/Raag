@@ -1422,10 +1422,16 @@ function adminOrdersTable(orders){
   return `<div class="admin-table-wrap"><table class="admin-table">
     <thead><tr><th>Order ID</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th></tr></thead>
     <tbody>
-      ${orders.map(o=>`<tr onclick="window.location.hash='#/admin/order/${o.id}'" style="cursor:pointer;">
-        <td class="t-label-mono">${o.id}</td><td>${o.customer}</td><td>${o.date}</td><td class="t-price">${formatPrice(o.total)}</td>
-        <td><span class="status-pill" style="color:${statusPillColor(o.status)}; border-color:${statusPillColor(o.status)}55;">${o.status}</span></td>
-      </tr>`).join("")}
+      ${orders.map(o=>{
+        const id   = o.orderId   || o.id       || "—";
+        const name = o.customerName || o.customer || "—";
+        const date = o.createdAt   || o.date     || "—";
+        const dateStr = date === "—" ? "—" : new Date(date).toLocaleDateString('en-GB');
+        return `<tr onclick="window.location.hash='#/admin/order/${id}'" style="cursor:pointer;">
+          <td class="t-label-mono">${id}</td><td>${name}</td><td>${dateStr}</td><td class="t-price">${formatPrice(o.total)}</td>
+          <td><span class="status-pill" style="color:${statusPillColor(o.status)}; border-color:${statusPillColor(o.status)}55;">${o.status}</span></td>
+        </tr>`;
+      }).join("")}
     </tbody>
   </table></div>`;
 }
@@ -1447,17 +1453,17 @@ function exportOrdersToExcel(){
   }
   const rows = MOCK_ORDERS.map(o=>({
     "Order ID": o.id,
-    "Customer": o.customer,
+    "Customer": o.customerName || o.customer || "",
     "Phone": o.phone,
     "Email": o.email || "",
     "Address": o.address,
     "City": o.city,
     "Province": o.province,
-    "Items": o.items,
+    "Items": Array.isArray(o.items) ? o.items.map(i=>i.productId+' x'+i.qty).join(', ') : (o.items || ""),
     "Total": o.total,
-    "Payment Method": "Cash on Delivery",
+    "Payment Method": o.paymentMethod || "Cash on Delivery",
     "Status": o.status,
-    "Date": o.date
+    "Date": o.createdAt || o.date || ""
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   ws["!cols"] = [
@@ -1471,33 +1477,38 @@ function exportOrdersToExcel(){
 
 let routeSubParam = null;
 function renderAdminOrderDetail(orderId){
-  const o = MOCK_ORDERS.find(x=>x.id===orderId);
+  const o = MOCK_ORDERS.find(x=>(x.orderId||x.id)===orderId);
   if(!o) return `<p>Order not found.</p><a href="#/admin/orders" class="btn-link">Back</a>`;
+  const id   = o.orderId   || o.id       || "—";
+  const name = o.customerName || o.customer || "—";
+  const itemsHtml = Array.isArray(o.items)
+    ? o.items.map(i=>{ const pr=getProduct(i.productId); return `<p>${pr?pr.name:i.productId} — Size ${i.size} × ${i.qty}</p>`; }).join('')
+    : `<p>${o.items||"—"}</p>`;
   return `
   <a href="#/admin/orders" class="btn-link t-body-sm">&larr; Back to Orders</a>
-  <h1 class="t-headline-lg mt-md mb-lg">${o.id}</h1>
+  <h1 class="t-headline-lg mt-md mb-lg">${id}</h1>
   <div style="display:grid; grid-template-columns:1fr; gap:var(--xl); max-width:640px;">
     <div>
       <p class="t-label-caps text-secondary mb-sm">Customer</p>
-      <p>${o.customer}</p><p class="text-secondary">${o.phone}</p>${o.email?`<p class="text-secondary">${o.email}</p>`:""}
+      <p>${name}</p><p class="text-secondary">${o.phone||""}</p>${o.email?`<p class="text-secondary">${o.email}</p>`:""}
     </div>
     <div>
       <p class="t-label-caps text-secondary mb-sm">Shipping Address</p>
-      <p>${o.address}</p><p>${o.city}, ${o.province}</p>
+      <p>${o.address||""}</p><p>${o.city||""}, ${o.province||""}</p>
     </div>
     <div>
       <p class="t-label-caps text-secondary mb-sm">Items</p>
-      <p>${o.items}</p>
+      ${itemsHtml}
     </div>
     <div class="flex-between">
       <p class="t-label-caps text-secondary">Total</p><p class="t-price">${formatPrice(o.total)}</p>
     </div>
     <div>
-      <p class="t-label-caps text-secondary mb-sm">Payment Method</p><p>Cash on Delivery</p>
+      <p class="t-label-caps text-secondary mb-sm">Payment Method</p><p>${o.paymentMethod||"Cash on Delivery"}</p>
     </div>
     <div>
       <p class="t-label-caps text-secondary mb-sm">Status</p>
-      <select onchange="updateOrderStatus('${o.id}', this.value)" style="border:1px solid var(--border-hairline); height:40px; padding:0 var(--sm);">
+      <select onchange="updateOrderStatus('${id}', this.value)" style="border:1px solid var(--border-hairline); height:40px; padding:0 var(--sm);">
         ${["New","Confirmed","Processing","Shipped","Delivered","Cancelled"].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join("")}
       </select>
     </div>
@@ -1505,7 +1516,7 @@ function renderAdminOrderDetail(orderId){
 }
 
 async function updateOrderStatus(orderId, status) {
-  const o = MOCK_ORDERS.find(x=>x.id===orderId);
+  const o = MOCK_ORDERS.find(x=>(x.orderId||x.id)===orderId);
   if(o) o.status = status;
   render();
   try {
