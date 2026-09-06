@@ -75,7 +75,14 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 .t-label-mono { font-family: var(--font-mono); font-weight: 400; font-size: 0.6875rem; line-height: 1.2; letter-spacing: 0.08em; }
 .t-price { font-family: var(--font-mono); font-weight: 500; font-size: 1rem; line-height: 1.2; letter-spacing: 0.02em; }
 
-.container { max-width: var(--max-editorial); margin: 0 auto; padding: 0 var(--gutter); }
+.container {
+  width: 100%;
+  max-width: var(--max-editorial);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  box-sizing: border-box;
+  overflow: hidden;
+}
 @media(min-width:1024px){ .container { padding: 0 2rem; } }
 
 /* ============================================================
@@ -208,7 +215,10 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 .btn-secondary { background: var(--bg-canvas); border-color: rgba(255,255,255,0.3); color: #fff; }
 .btn-secondary:hover { background: #fff; color: #000; }
 .btn-block { width: 100%; }
-.btn-link { height: auto; padding: 0; font-size: 0.8125rem; letter-spacing: 0.02em; text-transform: none; border-bottom: 1px solid #fff; padding-bottom: 2px; }
+.btn-link {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 
 /* ============================================================
    PRODUCT CARDS & GRID
@@ -636,7 +646,15 @@ table.admin-table { width: 100%; border-collapse: collapse; min-width: 520px; }
 .mb-xs { margin-bottom: var(--xs); } .mb-sm { margin-bottom: var(--sm); } .mb-md { margin-bottom: var(--md); } .mb-lg { margin-bottom: var(--lg); }
 .text-secondary { color: var(--text-secondary); }
 .text-tertiary { color: var(--text-tertiary); }
-.flex-between { display: flex; justify-content: space-between; align-items: center; gap: var(--sm); flex-wrap: wrap; }
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sm);
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 100%;
+}
 .hidden { display: none !important; }
 .center-text { text-align: center; }
 
