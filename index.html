@@ -52,8 +52,6 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   max-width: 100%;
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
 }
 img, svg { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
@@ -253,14 +251,18 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
   height: 92vh;
   min-height: 520px;
   max-height: 900px;
-  background-image: url('hero.jpg');
-  background-size: cover;
-  background-position: center 20%;
   border-bottom: 1px solid var(--border-hairline);
   overflow: hidden;
-  transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
+}
+
+.hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  display: block;
 }
 
 /* Cinematic gradient overlay */
@@ -395,15 +397,16 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
   .hero-sub { font-size: 0.9375rem; }
 }
 @media(max-width: 1023px) {
-  .hero { height: 80vh; background-position: center 20%; }
+  .hero { height: 80vh; }
+  .hero-img { object-position: 60% 20%; }
   .hero-content { bottom: 8%; left: 5%; }
 }
 @media(max-width: 767px) {
   .hero {
-    height: 88vh;
+    height: 100svh;
     min-height: 480px;
-    background-position: center top; /* ← FIXED: photo center rakhega, crop nahi hoga */
   }
+  .hero-img { object-position: 70% center; }
   .hero-content { bottom: 7%; left: 5%; right: 5%; max-width: none; }
   .hero-scroll-hint { display: none; }
   .hero-sub { max-width: 100%; }
@@ -1331,6 +1334,7 @@ function renderHome(){
   const bestSellers = PRODUCTS.filter(p=>p.bestSeller);
   return `
   <section class="hero" aria-label="RAAG Hero">
+    <img src="hero.jpg" alt="" class="hero-img" fetchpriority="high">
     <div class="hero-content">
       <p class="hero-eyebrow">Timeless Essentials</p>
       <h1 class="hero-title">Crafted for<br><em>Modern Living.</em></h1>
