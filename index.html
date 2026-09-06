@@ -246,26 +246,38 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 .hairline-top { border-top: 1px solid var(--border-hairline); }
 .eyebrow { color: var(--text-tertiary); }
 
-/* HERO — ATTACHED HERO IMAGE INTEGRATION (hero.jpg) */
+/* HERO — ENHANCED HIGH-DEFINITION HERO SECTION & PERFECT CTA HOTSPOT */
 .hero {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  min-height: 380px;
+  min-height: 420px;
   max-height: 82vh;
   background-image: url('hero.jpg');
   background-size: cover;
-  background-position: center right;
+  background-position: center 11%;
   border-bottom: 1px solid var(--border-hairline);
   overflow: hidden;
+  image-rendering: -webkit-optimize-contrast;
+  filter: contrast(1.05) saturate(1.03) brightness(1.02);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+@media(max-width: 1023px) {
+  .hero {
+    aspect-ratio: 16 / 10;
+    min-height: 380px;
+    background-position: 55% 11%;
+  }
 }
 @media(max-width: 767px) {
   .hero {
-    aspect-ratio: auto;
-    height: 66vh;
-    min-height: 360px;
+    aspect-ratio: 4 / 3;
+    height: 62vh;
+    min-height: 340px;
     max-height: 520px;
-    background-position: 68% center;
+    background-position: 66% 10%;
   }
 }
 
@@ -273,31 +285,42 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 .hero-cta-overlay {
   position: absolute;
   left: 6%;
-  top: 60.5%;
+  top: 57%;
   width: 17.5%;
-  min-width: 160px;
-  height: 9.5%;
-  min-height: 44px;
-  max-height: 54px;
+  min-width: 150px;
+  max-width: 220px;
+  height: 7.5%;
+  min-height: 38px;
+  max-height: 50px;
   z-index: 10;
   cursor: pointer;
   background: transparent;
-  border: 1px solid transparent;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 2px;
   transition: all 220ms ease;
-  outline: none;
 }
 .hero-cta-overlay:hover, .hero-cta-overlay:focus-visible {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: brightness(1.18);
+  -webkit-backdrop-filter: brightness(1.18);
+}
+@media(max-width: 1023px) {
+  .hero-cta-overlay {
+    left: 5.5%;
+    top: 56.5%;
+    width: 24%;
+    min-width: 140px;
+  }
 }
 @media(max-width: 767px) {
   .hero-cta-overlay {
-    left: 5.5%;
-    top: 58.5%;
-    width: 48%;
-    min-width: 140px;
-    height: 44px;
+    left: 5%;
+    top: 55.5%;
+    width: 44%;
+    min-width: 130px;
+    height: 42px;
   }
 }
 
