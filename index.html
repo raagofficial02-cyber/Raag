@@ -156,8 +156,8 @@ input,textarea,select{font-family:inherit; background:none; border:none; color:i
 /* ============================================================
    PRODUCT CARD
    ============================================================ */
-.product-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:var(--md);}
-@media(min-width:768px){.product-grid{grid-template-columns:repeat(2,1fr); gap:var(--lg);}}
+.product-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:var(--md);}
+@media(min-width:768px){.product-grid{grid-template-columns:repeat(3,1fr); gap:var(--lg);}}
 @media(min-width:1024px){.product-grid{grid-template-columns:repeat(4,1fr); gap:var(--lg);}}
 .product-grid.pg-3{}
 .product-card{display:block; cursor:pointer;}
@@ -1614,15 +1614,16 @@ async function updateOrderStatus(orderId, status) {
 async function deleteOrder(orderId) {
   if (!confirm(`Delete order ${orderId}? This cannot be undone.`)) return;
   try {
-    const res = await fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', orderId })
-    });
+    const res = await fetch('/api/orders?id=' + encodeURIComponent(orderId), { method: 'DELETE' });
     const text = await res.text();
     let data = {};
     try { data = text ? JSON.parse(text) : {}; } catch (_) {}
-    if (!res.ok) throw new Error(data.error || 'Failed to delete order');
+    
+    if (!res.ok) {
+      if (text.includes("METHOD")) throw new Error("Server needs restart to apply API changes.");
+      throw new Error(data.error || 'Failed to delete order');
+    }
+    
     MOCK_ORDERS = MOCK_ORDERS.filter(o => (o.orderId || o.id) !== orderId);
     render();
     showToast('Order deleted');
@@ -1738,13 +1739,20 @@ function closeDeleteProductModal() {
 
 async function confirmDeleteProduct() {
   if (!productToDelete) return;
-  const res = await fetch('/api/products?id=' + productToDelete, { method: 'DELETE' });
-  if (res.ok) {
+  try {
+    const res = await fetch('/api/products?id=' + encodeURIComponent(productToDelete), { method: 'DELETE' });
+    const text = await res.text();
+    if (!res.ok) {
+      if (text.includes("METHOD")) throw new Error("Server needs restart to apply API changes.");
+      let err = 'Failed to delete product';
+      try { err = JSON.parse(text).error || err; } catch(_) {}
+      throw new Error(err);
+    }
     PRODUCTS = PRODUCTS.filter(p => p.id !== productToDelete);
     render();
     showToast("Product deleted");
-  } else {
-    showToast("Failed to delete product");
+  } catch (e) {
+    showToast(e.message || "Failed to delete product");
   }
   closeDeleteProductModal();
 }
