@@ -1,15 +1,32 @@
 const supabase = require('./_supabase');
 
-export default async function handler(req, res) {
-  if (req.method === 'GET') {
+async function deleteOrderById(res, id) {
+  if (!id) return res.status(400).json({ error: 'Missing order ID' });
+
+  const { error } = await supabase.from('orders').delete().eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  return res.status(200).json({ success: true });
+}
+
+module.exports = async function handler(req, res) {
+  const method = String(req.method || '').toUpperCase();
+
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
+  if (method === 'GET') {
     const { data, error } = await supabase
       .from('orders')
       .select('*')
       .order('created_at', { ascending: false });
-      
+
     if (error) return res.status(500).json({ error: error.message });
-    
-    // Map camelCase for frontend
+
     const formattedData = data.map(o => ({
       orderId: o.id,
       customerName: o.customer_name,
@@ -29,13 +46,18 @@ export default async function handler(req, res) {
       status: o.status,
       createdAt: o.created_at
     }));
-    
+
     return res.status(200).json(formattedData);
   }
 
-  if (req.method === 'POST') {
-    const o = req.body;
-    
+  if (method === 'POST') {
+    const o = req.body || {};
+
+    // Hosts often block HTTP DELETE; cancel/delete via POST instead.
+    if (o.action === 'delete') {
+      return deleteOrderById(res, o.orderId || o.id);
+    }
+
     const dbOrder = {
       id: o.orderId,
       customer_name: o.customerName,
@@ -55,11 +77,10 @@ export default async function handler(req, res) {
       status: o.status || 'New',
       created_at: o.createdAt || new Date().toISOString()
     };
-    
+
     const { data, error } = await supabase.from('orders').insert([dbOrder]).select();
     if (error) return res.status(500).json({ error: error.message });
-    
-    // Attempt to upsert customer
+
     const { data: customers } = await supabase.from('customers').select('*').eq('phone', o.phone);
     if (customers && customers.length > 0) {
       const existing = customers[0];
@@ -86,9 +107,9 @@ export default async function handler(req, res) {
     return res.status(201).json(data);
   }
 
-  if (req.method === 'PUT') {
-    const { orderId, status } = req.body;
-    if (!orderId || !status) return res.status(400).json({ error: "Missing orderId or status" });
+  if (method === 'PUT' || method === 'PATCH') {
+    const { orderId, status } = req.body || {};
+    if (!orderId || !status) return res.status(400).json({ error: 'Missing orderId or status' });
 
     const { data, error } = await supabase
       .from('orders')
@@ -100,6 +121,11 @@ export default async function handler(req, res) {
     return res.status(200).json(data);
   }
 
-  res.setHeader('Allow', ['GET', 'POST', 'PUT']);
-  res.status(405).end(`Method ${req.method} Not Allowed`);
-}
+  if (method === 'DELETE') {
+    const id = (req.query && (req.query.id || req.query.orderId)) || (req.body && (req.body.id || req.body.orderId));
+    return deleteOrderById(res, id);
+  }
+
+  res.setHeader('Allow', ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
+  return res.status(405).json({ error: `Method ${method} not allowed` });
+};
