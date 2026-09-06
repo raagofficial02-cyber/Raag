@@ -156,7 +156,8 @@ input,textarea,select{font-family:inherit; background:none; border:none; color:i
 /* ============================================================
    PRODUCT CARD
    ============================================================ */
-.product-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:var(--md);}
+.product-grid{display:grid; grid-template-columns:repeat(2, 1fr); gap:var(--sm);}
+@media(min-width:480px){.product-grid{gap:var(--md);}}
 @media(min-width:768px){.product-grid{grid-template-columns:repeat(3,1fr); gap:var(--lg);}}
 @media(min-width:1024px){.product-grid{grid-template-columns:repeat(4,1fr); gap:var(--lg);}}
 .product-grid.pg-3{}
@@ -172,6 +173,11 @@ input,textarea,select{font-family:inherit; background:none; border:none; color:i
 .product-media .ph-alt{opacity:0;}
 .product-card:hover .ph-alt{opacity:1;}
 .product-card:hover .ph-base{opacity:0;}
+
+
+/* placeholder garment art */
+.garment-svg{width:38%; opacity:0.85; filter:drop-shadow(0 10px 18px rgba(0,0,0,0.55));}
+.garment-svg path,.garment-svg line{stroke:rgba(229,229,229,0.5); fill:none; stroke-width:1;}
 .badge{
   position:absolute; top:var(--sm); left:var(--sm);
   font-family:var(--font-mono); font-size:0.625rem; letter-spacing:0.08em;
@@ -184,9 +190,6 @@ input,textarea,select{font-family:inherit; background:none; border:none; color:i
 .product-cat{color:var(--text-tertiary); font-size:0.8125rem; margin-top:2px;}
 .product-price{font-family:var(--font-mono); font-size:0.9375rem; margin-top:var(--xs);}
 
-/* placeholder garment art */
-.garment-svg{width:42%; opacity:0.9;}
-.garment-svg path,.garment-svg line{stroke:rgba(255,255,255,0.55); fill:none; stroke-width:1.2;}
 
 /* ============================================================
    SECTIONS / LAYOUT
@@ -339,6 +342,7 @@ footer{border-top:1px solid var(--border-hairline); padding:var(--xxl) 0 var(--x
 /* Admin */
 .admin-shell{display:grid; grid-template-columns:1fr; min-height:calc(100vh - 64px);}
 @media(min-width:900px){.admin-shell{grid-template-columns:260px 1fr;}}
+.admin-modal{max-height:calc(100vh - 2rem); overflow-y:auto;}
 .admin-sidebar{background:#080808; border-right:1px solid var(--border-subtle); padding:var(--lg) 0; display:none;}
 @media(min-width:900px){.admin-sidebar{display:block;}}
 .admin-tabs-mobile{display:flex; overflow-x:auto; gap:var(--sm); padding:var(--md) var(--gutter); border-bottom:1px solid var(--border-hairline); -webkit-overflow-scrolling:touch; scrollbar-width:none;}
@@ -380,11 +384,15 @@ table.admin-table{width:100%; border-collapse:collapse; min-width:520px;}
 }
 .product-title{overflow-wrap:anywhere;}
 .page{overflow-x:hidden;}
+@media(max-width:767px){
+  .hero{height:66vh; min-height:440px; max-height:620px;}
+}
 @media(max-width:480px){
-  .hero{height:78vh; min-height:380px;}
-  .product-grid{gap:var(--sm);}
-  .product-title{font-size:0.75rem;}
-  .btn{width:100%;}
+  .product-title{font-size:0.8125rem;}
+  .product-cat{font-size:0.75rem;}
+  .product-price{font-size:0.8125rem;}
+  /* Only the hero CTAs and any .btn-block are full width on mobile —
+     secondary/admin/compact buttons keep their natural size. */
   .hero-cta-row .btn{width:100%;}
 }
 
@@ -436,6 +444,24 @@ table.admin-table{width:100%; border-collapse:collapse; min-width:520px;}
   width:60px; height:75px; background:var(--bg-surface-elevated); display:flex; align-items:center; justify-content:center; border:1px solid var(--border-subtle); flex-shrink:0;
 }
 .search-result-thumb svg { width:50%; }
+
+/* ============================================================
+   EDITORIAL PLACEHOLDER SURFACE
+   Subtle tonal gradient + soft top light + fine grain, sitting
+   behind whatever renders inside each media container (a real
+   <img> simply paints over this — it never affects actual
+   product photography, only the glyph fallback / empty state).
+   ============================================================ */
+.product-media,.lookbook-block,.pdp-gallery-main,.pdp-thumb,.cart-line-thumb,.search-result-thumb{
+  position:relative; overflow:hidden;
+  background:
+    radial-gradient(120% 90% at 50% 8%, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 40%),
+    radial-gradient(130% 110% at 50% 20%, #1e1e1e 0%, #101010 55%, #060606 100%);
+}
+.product-media::before,.lookbook-block::before,.pdp-gallery-main::before,.pdp-thumb::before,.cart-line-thumb::before,.search-result-thumb::before{
+  content:''; position:absolute; inset:-20%; pointer-events:none; opacity:0.05; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNjAnIGhlaWdodD0nMTYwJz48ZmlsdGVyIGlkPSduJz48ZmVUdXJidWxlbmNlIHR5cGU9J2ZyYWN0YWxOb2lzZScgYmFzZUZyZXF1ZW5jeT0nMC44JyBudW1PY3RhdmVzPScyJyBzdGl0Y2hUaWxlcz0nc3RpdGNoJy8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9JzEwMCUnIGhlaWdodD0nMTAwJScgZmlsdGVyPSd1cmwoI24pJyBvcGFjaXR5PScwLjklJy8+PC9zdmc+");
+}
 </style>
 </head>
 <body>
@@ -452,9 +478,6 @@ table.admin-table{width:100%; border-collapse:collapse; min-width:520px;}
     </div>
     <a href="#/" class="nav-logo" aria-label="RAAG Home"><img id="navLogoImg" src="" alt="RAAG" /></a>
     <div class="nav-right">
-      <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
       <button class="nav-icon-btn" id="searchBtn" aria-label="Search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
@@ -466,6 +489,9 @@ table.admin-table{width:100%; border-collapse:collapse; min-width:520px;}
       <button class="nav-icon-btn" id="cartBtn" aria-label="Cart">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
         <span class="cart-badge" id="cartBadge">0</span>
+      </button>
+      <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
     </div>
   </div>
