@@ -96,7 +96,8 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 }
 @media(min-width:1024px){ .nav-inner { padding: 0 2rem; } }
 .nav-left, .nav-right { display: flex; align-items: center; gap: var(--xl); height: 100%; }
-.nav-right { justify-content: flex-end; gap: var(--lg); }
+.nav-right { justify-content: flex-end; gap: var(--sm); }
+@media(min-width:1024px){ .nav-right { gap: var(--lg); } }
 .nav-left { display: none; }
 @media(min-width:1024px){ .nav-left { display: flex; } }
 .nav-link {
@@ -114,13 +115,16 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 .nav-logo-text {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1.35rem;
-  letter-spacing: 0.26em;
+  font-size: 1.1rem;
+  letter-spacing: 0.18em;
   color: var(--text-primary);
   text-transform: uppercase;
   user-select: none;
   transition: opacity 200ms ease;
   white-space: nowrap;
+}
+@media(min-width:1024px){
+  .nav-logo-text { font-size: 1.35rem; letter-spacing: 0.26em; }
 }
 .nav-logo-text:hover { opacity: 0.85; }
 
@@ -261,7 +265,7 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 70% 1%;
+  object-position: center 20%;
   display: block;
 }
 
@@ -398,7 +402,7 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 }
 @media(max-width: 1023px) {
   .hero { height: 80vh; }
-  .hero-img { object-position: 70% 1%; }
+  .hero-img { object-position: 60% 20%; }
   .hero-content { bottom: 8%; left: 5%; }
 }
 @media(max-width: 767px) {
@@ -406,7 +410,7 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
     height: 100svh;
     min-height: 480px;
   }
-  .hero-img { object-position: 75% 1%; }
+  .hero-img { object-position: 55% center; }
   .hero-content { bottom: 7%; left: 5%; right: 5%; max-width: none; }
   .hero-scroll-hint { display: none; }
   .hero-sub { max-width: 100%; }
