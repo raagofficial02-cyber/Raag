@@ -2296,10 +2296,10 @@ async function render(){
 
   app.innerHTML = html + (showFooter ? siteFooter() : "");
   pdpSelectedSize = null;
-  // Re-init scroll animations after each render
-  if (typeof initScrollAnimations === 'function') {
-    requestAnimationFrame(() => initScrollAnimations());
-  }
+  // Init scroll reveal and product grid animations after each page render
+  requestAnimationFrame(() => {
+    if (typeof initProductGridReveal === 'function') initProductGridReveal();
+  });
 }
 
 /* ============================================================
@@ -2317,7 +2317,7 @@ bootstrap();
    SCROLL REVEAL — IntersectionObserver
    ============================================================ */
 function initScrollAnimations() {
-  const reveals = document.querySelectorAll('.reveal');
+  const reveals = document.querySelectorAll('.reveal:not(.visible)');
   if (!reveals.length) return;
 
   if ('IntersectionObserver' in window) {
@@ -2328,16 +2328,14 @@ function initScrollAnimations() {
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
 
     reveals.forEach(el => observer.observe(el));
   } else {
-    // Fallback: show all immediately
     reveals.forEach(el => el.classList.add('visible'));
   }
 }
 
-// Also init product-grid children as reveal items dynamically
 function initProductGridReveal() {
   document.querySelectorAll('.reveal-group .product-card, .reveal-group .lookbook-block').forEach(el => {
     if (!el.classList.contains('reveal')) {
@@ -2345,15 +2343,6 @@ function initProductGridReveal() {
     }
   });
   initScrollAnimations();
-}
-
-// Patch render to also init product grid reveal
-const _origRender = render;
-async function render() {
-  await _origRender.apply(this, arguments);
-  requestAnimationFrame(() => {
-    initProductGridReveal();
-  });
 }
 
 /* ============================================================
