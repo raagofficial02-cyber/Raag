@@ -916,31 +916,86 @@ function formatPrice(n){ return STORE_CONFIG.currency + " " + (n || 0).toLocaleS
 /* ============================================================
    IMAGE HELPERS — Display Real Photography or Refined Fallback
    ============================================================ */
+// Normalizes whatever the API/database actually returns for a product's
+// image data into a clean array of URL strings — without touching the
+// stored value itself. This is purely a read-side safeguard against the
+// common real-world variations that make a correctly-stored image fail
+// to render: the field already being an array (the expected shape), a
+// JSON-encoded string (some drivers return JSON/array columns as raw
+// text), a comma-separated string, or the URL(s) living under a
+// differently-named key than "images".
+function resolveProductImages(p) {
+  if (!p) return [];
+  let raw = p.images;
+  if (raw === undefined || raw === null) {
+    raw = p.image_url || p.imageUrl || p.image_urls || p.imageUrls || p.photos || p.photo_urls || p.image || null;
+  }
+  if (raw === undefined || raw === null) return [];
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        raw = Array.isArray(parsed) ? parsed : [trimmed];
+      } catch (e) {
+        raw = trimmed.split(",").map(s => s.trim());
+      }
+    } else if (trimmed.includes(",")) {
+      raw = trimmed.split(",").map(s => s.trim());
+    } else {
+      raw = [trimmed];
+    }
+  }
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(u => typeof u === "string" && u.trim().length > 0);
+}
+
+// Renders a real photo with a hidden glyph fallback right behind it.
+// The fallback is only ever revealed by handleMediaImgError below, i.e.
+// only on a genuine load failure — never shown ahead of a real image.
+function mediaWithFallback(url, alt, glyph, extraAttrs) {
+  return `<div style="width:100%; height:100%; position:relative;">
+    <img src="${url}" alt="${alt}" style="width:100%; height:100%; object-fit:cover; object-position:center top; position:relative;" loading="lazy" ${extraAttrs || ""} onerror="handleMediaImgError(this)" />
+    <div style="display:none; position:absolute; inset:0; align-items:center; justify-content:center;">${glyph}</div>
+  </div>`;
+}
+function handleMediaImgError(imgEl) {
+  imgEl.style.display = "none";
+  const fallback = imgEl.nextElementSibling;
+  if (fallback) fallback.style.display = "flex";
+}
+
 function getProductMediaBase(p) {
-  return (p && p.images && p.images.length > 0)
-    ? `<img src="${p.images[0]}" alt="${p.name}" style="width:100%; height:100%; object-fit:cover; object-position:center top;" loading="lazy" onerror="this.style.display='none'" />`
+  const imgs = resolveProductImages(p);
+  return imgs.length > 0
+    ? mediaWithFallback(imgs[0], p.name, (p && p.glyph) ? p.glyph : GLYPHS.jacket)
     : (p && p.glyph ? p.glyph : GLYPHS.jacket);
 }
 function getProductMediaAlt(p) {
   if (!p) return GLYPHS.jacket;
-  const src = (p.images && p.images.length > 1) ? p.images[1] : (p.images && p.images.length > 0 ? p.images[0] : null);
+  const imgs = resolveProductImages(p);
+  const src = imgs.length > 1 ? imgs[1] : (imgs.length > 0 ? imgs[0] : null);
   return src
-    ? `<img src="${src}" alt="${p.name}" style="width:100%; height:100%; object-fit:cover; object-position:center top;" loading="lazy" onerror="this.style.display='none'" />`
+    ? mediaWithFallback(src, p.name, p.glyph || GLYPHS.jacket)
     : (p.glyph || GLYPHS.jacket);
 }
 function getProductMediaCart(p) {
-  return (p && p.images && p.images.length > 0)
-    ? `<img src="${p.images[0]}" alt="${p.name}" style="width:100%; height:100%; object-fit:cover; object-position:center top;" loading="lazy" onerror="this.style.display='none'" />`
+  const imgs = resolveProductImages(p);
+  return imgs.length > 0
+    ? mediaWithFallback(imgs[0], p.name, (p && p.glyph) ? p.glyph : GLYPHS.jacket)
     : (p && p.glyph ? p.glyph : GLYPHS.jacket);
 }
 function getProductMediaMainPdp(p) {
-  return (p && p.images && p.images.length > 0)
-    ? `<img src="${p.images[0]}" id="pdpMainImage" alt="${p.name}" style="width:100%; height:100%; object-fit:cover; object-position:center top;" loading="lazy" onerror="this.style.display='none'" />`
+  const imgs = resolveProductImages(p);
+  return imgs.length > 0
+    ? mediaWithFallback(imgs[0], p.name, p.glyph || GLYPHS.jacket, 'id="pdpMainImage"')
     : `<div style="width:48%; display:flex; justify-content:center; align-items:center; height:100%;">${p.glyph || GLYPHS.jacket}</div>`;
 }
 function getProductMediaThumbPdp(p, idx) {
-  if (p && p.images && p.images.length > idx) {
-    return `<img src="${p.images[idx]}" alt="${p.name}" style="width:100%; height:100%; object-fit:cover; object-position:center top;" loading="lazy" onerror="this.style.display='none'" />`;
+  const imgs = resolveProductImages(p);
+  if (imgs.length > idx) {
+    return mediaWithFallback(imgs[idx], p.name, (p && p.glyph) ? p.glyph : GLYPHS.jacket);
   }
   return `<div style="width:50%; display:flex; justify-content:center; align-items:center; height:100%; ${idx===1?'opacity:0.6;':''}">${p ? p.glyph : GLYPHS.jacket}</div>`;
 }
@@ -1418,8 +1473,12 @@ function swapPdpImage(el, idx) {
   document.querySelectorAll(".pdp-thumb").forEach(t => t.classList.remove("active"));
   el.classList.add("active");
   const mainImg = document.getElementById("pdpMainImage");
-  if (mainImg && currentPdpProduct && currentPdpProduct.images && currentPdpProduct.images[idx]) {
-    mainImg.src = currentPdpProduct.images[idx];
+  const imgs = resolveProductImages(currentPdpProduct);
+  if (mainImg && imgs[idx]) {
+    mainImg.style.display = "";
+    const fallback = mainImg.nextElementSibling;
+    if (fallback) fallback.style.display = "none";
+    mainImg.src = imgs[idx];
   }
 }
 
