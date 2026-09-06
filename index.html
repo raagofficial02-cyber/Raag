@@ -246,7 +246,6 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 @media(min-width:1024px){ .section { padding: var(--xxxl) 0; } }
 .hairline-top { border-top: 1px solid var(--border-hairline); }
 .eyebrow { color: var(--text-tertiary); }
-
 /* HERO — NEW EDITORIAL HERO (natural model/environment photo) */
 .hero {
   position: relative;
@@ -310,7 +309,7 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 .hero-title {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(2.2rem, 5.5vw, 4.2rem);
+  font-size: 2.5rem; /* ← FIXED: clamp hata diya, mobile pe consistent */
   line-height: 1.0;
   letter-spacing: -0.035em;
   color: #fff;
@@ -322,7 +321,7 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 }
 .hero-sub {
   font-family: var(--font-body);
-  font-size: clamp(0.8125rem, 1.4vw, 0.9375rem);
+  font-size: 0.9rem; /* ← FIXED: clamp hata diya, mobile pe readable */
   color: rgba(255,255,255,0.68);
   line-height: 1.55;
   margin-bottom: 2rem;
@@ -390,14 +389,24 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
   50% { opacity: 0.9; transform: scaleY(1.18); }
 }
 
+/* ← FIXED: Mobile media queries */
+@media(min-width: 1024px) {
+  .hero-title { font-size: 4.2rem; }
+  .hero-sub { font-size: 0.9375rem; }
+}
 @media(max-width: 1023px) {
-  .hero { height: 80vh; background-position: 60% 20%; }
+  .hero { height: 80vh; background-position: center 20%; }
   .hero-content { bottom: 8%; left: 5%; }
 }
 @media(max-width: 767px) {
-  .hero { height: 88vh; min-height: 480px;  background-position: center top; }
+  .hero {
+    height: 88vh;
+    min-height: 480px;
+    background-position: center top; /* ← FIXED: photo center rakhega, crop nahi hoga */
+  }
   .hero-content { bottom: 7%; left: 5%; right: 5%; max-width: none; }
   .hero-scroll-hint { display: none; }
+  .hero-sub { max-width: 100%; }
 }
 
 /* Editorial / lookbook */
