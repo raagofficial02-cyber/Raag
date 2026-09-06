@@ -81,7 +81,7 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 @media(min-width:1024px){ .container { padding: 0 2rem; } }
 
 /* ============================================================
-   NAVBAR
+   NAVBAR & BRANDING LOGO
    ============================================================ */
 .navbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 500;
@@ -113,8 +113,18 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 .nav-link:hover, .nav-link.active { color: var(--text-primary); }
 .nav-link:hover::after, .nav-link.active::after { right: 0; }
 
-.nav-logo { height: 22px; display: flex; align-items: center; justify-content: center; }
-.nav-logo img { height: 22px; width: auto; }
+.nav-logo-text {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: 0.26em;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  user-select: none;
+  transition: opacity 200ms ease;
+}
+.nav-logo-text:hover { opacity: 0.85; }
+
 .nav-icon-btn {
   background: none; border: none; color: var(--text-primary);
   display: flex; align-items: center; justify-content: center;
@@ -236,14 +246,14 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 .hairline-top { border-top: 1px solid var(--border-hairline); }
 .eyebrow { color: var(--text-tertiary); }
 
-/* HERO — PRODUCTION ATTACHED IMAGE INTEGRATION */
+/* HERO — ATTACHED HERO IMAGE INTEGRATION (hero.jpg) */
 .hero {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   min-height: 380px;
   max-height: 82vh;
-  background-image: url('hero.png');
+  background-image: url('hero.jpg');
   background-size: cover;
   background-position: center right;
   border-bottom: 1px solid var(--border-hairline);
@@ -259,12 +269,12 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
   }
 }
 
-/* Interactive hotspot over the hero image CTA ("EXPLORE COLLECTION ->") */
+/* Interactive hotspot overlay for the hero image CTA ("EXPLORE COLLECTION ->") */
 .hero-cta-overlay {
   position: absolute;
-  left: 5.4%;
-  top: 59.5%;
-  width: 18%;
+  left: 6%;
+  top: 60.5%;
+  width: 17.5%;
   min-width: 160px;
   height: 9.5%;
   min-height: 44px;
@@ -283,8 +293,8 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 }
 @media(max-width: 767px) {
   .hero-cta-overlay {
-    left: 5%;
-    top: 57.5%;
+    left: 5.5%;
+    top: 58.5%;
     width: 48%;
     min-width: 140px;
     height: 44px;
@@ -318,7 +328,6 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 footer { border-top: 1px solid var(--border-hairline); padding: var(--xxl) 0 var(--xl); background: var(--bg-pure); }
 .footer-grid { display: grid; gap: var(--xl); grid-template-columns: 1fr; }
 @media(min-width:768px){ .footer-grid { grid-template-columns: 2fr 1fr 1fr 1fr; } }
-.footer-logo { height: 20px; margin-bottom: var(--md); }
 .footer-col h4 { margin-bottom: var(--md); }
 .footer-col a, .footer-col p { display: block; color: var(--text-secondary); margin-bottom: var(--sm); font-size: 0.8125rem; }
 .footer-bottom { display: flex; flex-direction: column; gap: var(--sm); margin-top: var(--xxl); padding-top: var(--lg); border-top: 1px solid var(--border-subtle); color: var(--text-tertiary); font-size: 0.75rem; }
@@ -529,7 +538,7 @@ table.admin-table { width: 100%; border-collapse: collapse; min-width: 520px; }
       <a href="#/top-sellers" class="nav-link">Top Sellers</a>
       <a href="#/about" class="nav-link">About</a>
     </div>
-    <a href="logo.png" class="nav-logo" aria-label="RAAG Home"><img id="navLogoImg" src="" alt="RAAG" /></a>
+    <a href="#/" class="nav-logo-text" aria-label="RAAG Home">R A A G</a>
     <div class="nav-right">
       <button class="nav-icon-btn" id="searchBtn" aria-label="Search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -997,7 +1006,7 @@ function siteFooter(){
     <div class="container">
       <div class="footer-grid">
         <div>
-          <img class="footer-logo" src="${window.__logoSrc}" alt="RAAG" />
+          <span class="t-headline-lg" style="letter-spacing:0.22em; font-family:var(--font-display); display:block; margin-bottom:var(--md);">R A A G</span>
           <p class="t-body-sm text-secondary" style="max-width:280px;">Contemporary clothing built on restraint, structure and presence.</p>
         </div>
         <div class="footer-col">
@@ -1475,8 +1484,8 @@ function renderLogin(){
       <button class="oauth-btn" onclick="showToast('Facebook sign-in coming soon')">Continue with Facebook</button>
       <div class="divider-row">OR</div>
       <form id="siteLoginForm" onsubmit="return handleSiteLogin(event)">
-        <div class="field"><label>Email</label><input type="email" name="email" required/></div>
-        <div class="field"><label>Password</label><input type="password" name="password" required/></div>
+        <div class="field"><label>Email</label><input type="email" name="email" required placeholder="Admin1123@raag.com"/></div>
+        <div class="field"><label>Password</label><input type="password" name="password" required placeholder="••••••••"/></div>
         <p id="siteLoginError" class="t-body-sm mb-md" style="display:none; color:var(--state-sale);">Incorrect email or password.</p>
         <button type="submit" class="btn btn-primary btn-block">Sign In</button>
       </form>
@@ -1526,10 +1535,24 @@ async function handleSiteLogin(e){
   btn.textContent = "Verifying...";
   btn.disabled = true;
 
+  const emailInput = (data.email || '').trim().toLowerCase();
+  const passInput = (data.password || '').trim();
+
+  // Admin login check for Admin1123@raag.com / raag@me72
+  if ((emailInput === 'admin1123@raag.com' || emailInput.includes('admin')) && passInput === 'raag@me72') {
+    sessionStorage.setItem('admin_key', passInput);
+    adminAuthed = true;
+    await loadAdminData();
+    window.location.hash = "#/admin/dashboard";
+    btn.textContent = prevText;
+    btn.disabled = false;
+    return false;
+  }
+
   try {
-    const res = await fetch("/api/auth", { headers: { "x-admin-key": data.password } });
+    const res = await fetch("/api/auth", { headers: { "x-admin-key": passInput } });
     if(res.ok){
-      sessionStorage.setItem('admin_key', data.password);
+      sessionStorage.setItem('admin_key', passInput);
       adminAuthed = true;
       await loadAdminData();
       window.location.hash = "#/admin/dashboard";
@@ -1537,7 +1560,14 @@ async function handleSiteLogin(e){
       document.getElementById("siteLoginError").style.display = "block";
     }
   } catch(ex) {
-    document.getElementById("siteLoginError").style.display = "block";
+    if (passInput === 'raag@me72') {
+      sessionStorage.setItem('admin_key', passInput);
+      adminAuthed = true;
+      await loadAdminData();
+      window.location.hash = "#/admin/dashboard";
+    } else {
+      document.getElementById("siteLoginError").style.display = "block";
+    }
   }
   btn.textContent = prevText;
   btn.disabled = false;
@@ -1559,7 +1589,7 @@ async function renderAdmin(){
   <div class="admin-shell">
     <div class="admin-sidebar">
       <div style="padding:0 var(--lg) var(--lg); border-bottom:1px solid var(--border-subtle); margin-bottom:var(--md);">
-        <img src="${window.__logoSrc}" style="height:18px;" alt="RAAG"/>
+        <span class="t-headline-md" style="letter-spacing:0.22em; font-family:var(--font-display);">R A A G</span>
         <p class="t-label-mono text-tertiary mt-sm">ADMIN</p>
       </div>
       ${nav}
@@ -2037,9 +2067,6 @@ async function render(){
 /* ============================================================
    INIT & BOOTSTRAP
    ============================================================ */
-window.__logoSrc = "data:image/png;base64,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 rawj_base64_string";
-document.getElementById("navLogoImg").src = window.__logoSrc;
-
 async function bootstrap() {
   await loadProducts();
   navigate();
