@@ -117,7 +117,7 @@ input,textarea,select{font-family:inherit; background:none; border:none; color:i
 .hamburger{display:flex; background:none; border:none; color:#fff; width:32px; height:32px; align-items:center; justify-content:center;}
 @media(min-width:1024px){.hamburger{display:none;}}
 .nav-right .account-desktop{display:none;}
-@media(min-width:1024px){.nav-right .account-desktop{display:flex;}}
+@media(min-width:1024px){.nav-right .account-desktop{display:flex; align-items:center; gap:var(--lg);}}
 
 /* Mobile menu */
 .mobile-menu{
@@ -391,6 +391,7 @@ table.admin-table{width:100%; border-collapse:collapse; min-width:520px;}
   .product-title{font-size:0.8125rem;}
   .product-cat{font-size:0.75rem;}
   .product-price{font-size:0.8125rem;}
+  .nav-right{gap:var(--md);}
   /* Only the hero CTAs and any .btn-block are full width on mobile —
      secondary/admin/compact buttons keep their natural size. */
   .hero-cta-row .btn{width:100%;}
@@ -481,7 +482,7 @@ table.admin-table{width:100%; border-collapse:collapse; min-width:520px;}
       <button class="nav-icon-btn" id="searchBtn" aria-label="Search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
-      <div class="account-desktop" style="display:flex; align-items:center; gap:var(--lg);">
+      <div class="account-desktop">
         <a href="#/login" class="nav-icon-btn" aria-label="Account">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"/></svg>
         </a>
