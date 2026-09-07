@@ -1826,29 +1826,33 @@ async function handlePlaceOrder(e){
 
   const waTab = window.open('about:blank', '_blank');
 
+  // Always save order locally first
+  try {
+    const savedOrders = JSON.parse(localStorage.getItem('raag_orders') || '[]');
+    savedOrders.unshift(order);
+    localStorage.setItem('raag_orders', JSON.stringify(savedOrders));
+    MOCK_ORDERS = savedOrders;
+  } catch(e) {}
+
+  // Try to send to API (works on Vercel)
   try {
     const res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(order)
     });
-
     if (!res.ok) throw new Error("API Error");
-
-    if (waTab) waTab.location.href = buildWhatsAppUrl(order);
-
-    lastOrder = order;
-    cart = [];
-    saveCart();
-    renderCartBadge();
-    window.location.hash = "#/checkout";
-    render();
   } catch (err) {
-    if (waTab) waTab.close();
-    btn.textContent = prevText;
-    btn.disabled = false;
-    showToast("Something went wrong. Please try again.");
+    // Silently ignore — order is already saved locally
   }
+
+  if (waTab) waTab.location.href = buildWhatsAppUrl(order);
+  lastOrder = order;
+  cart = [];
+  saveCart();
+  renderCartBadge();
+  window.location.hash = "#/checkout";
+  render();
 
   return false;
 }
@@ -1884,9 +1888,9 @@ function renderLogin(){
       <button class="oauth-btn" onclick="showToast('Google sign-in coming soon')">Continue with Google</button>
       <button class="oauth-btn" onclick="showToast('Facebook sign-in coming soon')">Continue with Facebook</button>
       <div class="divider-row">OR</div>
-      <form id="siteLoginForm" onsubmit="return handleSiteLogin(event)">
-        <div class="field"><label>Email</label><input type="email" name="email" required placeholder="Admin1123@raag.com"/></div>
-        <div class="field"><label>Password</label><input type="password" name="password" required placeholder="••••••••"/></div>
+      <form id="siteLoginForm" onsubmit="return handleSiteLogin(event)" autocomplete="off">
+        <div class="field"><label>Email</label><input type="email" name="email" required placeholder="Enter your email" autocomplete="new-password"/></div>
+        <div class="field"><label>Password</label><input type="password" name="password" required placeholder="Enter your password" autocomplete="new-password"/></div>
         <p id="siteLoginError" class="t-body-sm mb-md" style="display:none; color:var(--state-sale);">Incorrect email or password.</p>
         <button type="submit" class="btn btn-primary btn-block">Sign In</button>
       </form>
@@ -1903,13 +1907,32 @@ let MOCK_ORDERS = [];
 let MOCK_CUSTOMERS = [];
 
 async function loadAdminData() {
+  // Try API first (works on Vercel)
   try {
     const oRes = await fetch('/api/orders');
-    if (oRes.ok) MOCK_ORDERS = await oRes.json();
-    const cRes = await fetch('/api/customers');
-    if (cRes.ok) MOCK_CUSTOMERS = await cRes.json();
+    if (oRes.ok) {
+      MOCK_ORDERS = await oRes.json();
+      try { localStorage.setItem('raag_orders', JSON.stringify(MOCK_ORDERS)); } catch(e) {}
+    } else {
+      const saved = localStorage.getItem('raag_orders');
+      if (saved) MOCK_ORDERS = JSON.parse(saved);
+    }
   } catch (e) {
-    console.error("Failed to load admin data", e);
+    const saved = localStorage.getItem('raag_orders');
+    if (saved) try { MOCK_ORDERS = JSON.parse(saved); } catch(_) {}
+  }
+  try {
+    const cRes = await fetch('/api/customers');
+    if (cRes.ok) {
+      MOCK_CUSTOMERS = await cRes.json();
+      try { localStorage.setItem('raag_customers', JSON.stringify(MOCK_CUSTOMERS)); } catch(e) {}
+    } else {
+      const saved = localStorage.getItem('raag_customers');
+      if (saved) MOCK_CUSTOMERS = JSON.parse(saved);
+    }
+  } catch (e) {
+    const saved = localStorage.getItem('raag_customers');
+    if (saved) try { MOCK_CUSTOMERS = JSON.parse(saved); } catch(_) {}
   }
 }
 
@@ -2401,11 +2424,7 @@ async function saveAdminProduct(){
 }
 
 async function renderAdminCustomers(){
-  let custData = [];
-  try {
-    const res = await fetch("/api/customers");
-    if(res.ok) custData = await res.json();
-  } catch(e){}
+  let custData = MOCK_CUSTOMERS;
 
   return `
   <div class="admin-section-head"><h1 class="t-headline-lg">Customers</h1></div>
@@ -2485,6 +2504,7 @@ async function render(){
    ============================================================ */
 async function bootstrap() {
   await loadProducts();
+  if (adminAuthed) await loadAdminData();
   navigate();
   renderCartBadge();
 }
