@@ -2216,7 +2216,10 @@ function renderAdminProducts(){
   return `
   <div class="admin-section-head">
     <h1 class="t-headline-lg">Products</h1>
-    <button class="btn btn-primary" onclick="openAdminProductModal()">Add Product</button>
+    <div>
+      <a href="/upload.html" class="btn btn-secondary" target="_blank" style="margin-right: 12px;">Upload Images</a>
+      <button class="btn btn-primary" onclick="openAdminProductModal()">Add Product</button>
+    </div>
   </div>
   <div class="admin-table-wrap"><table class="admin-table">
     <thead><tr><th>Product</th><th>Price</th><th>Sizes</th><th>Status</th><th></th></tr></thead>
