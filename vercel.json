@@ -9,9 +9,6 @@
     }
   ],
   "rewrites": [
-    {
-      "source": "/((?!api/|upload\\.html|404\\.html|.*\\.(jpg|jpeg|png|gif|webp|svg|ico|css|js|woff|woff2|ttf|json)).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
