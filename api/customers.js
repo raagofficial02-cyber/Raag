@@ -24,6 +24,15 @@ export default async function handler(req, res) {
     return res.status(200).json(formattedData);
   }
 
-  res.setHeader('Allow', ['GET']);
+  if (req.method === 'DELETE') {
+    const { id } = req.query;
+    if (!id) return res.status(400).json({ error: "Missing customer ID" });
+    
+    const { error } = await supabase.from('customers').delete().eq('id', id);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ success: true });
+  }
+
+  res.setHeader('Allow', ['GET', 'DELETE']);
   res.status(405).end(`Method ${req.method} Not Allowed`);
 }
