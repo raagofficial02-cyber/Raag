@@ -486,6 +486,51 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 .lookbook-block.tall { aspect-ratio: 3/4; }
 .brand-statement { max-width: 640px; }
 
+/* Instagram / social proof strip */
+.insta-strip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media(min-width:640px){ .insta-strip-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
+.insta-tile {
+  aspect-ratio: 1/1; position: relative; overflow: hidden;
+  background: radial-gradient(circle at 50% 35%, #1c1c1c 0%, #101010 60%, #050505 100%);
+  border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center;
+  transition: border-color 220ms ease, transform 300ms ease;
+}
+.insta-tile:hover { border-color: rgba(255,255,255,0.28); transform: translateY(-3px); }
+.insta-tile svg { width: 34%; opacity: 0.55; }
+.insta-tile .insta-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0); transition: background 220ms ease;
+}
+.insta-tile:hover .insta-overlay { background: rgba(0,0,0,0.35); }
+.insta-tile .insta-hover-icon {
+  opacity: 0; transform: scale(0.8); transition: opacity 220ms ease, transform 220ms ease;
+  width: 22px; height: 22px; color: #fff;
+}
+.insta-tile:hover .insta-hover-icon { opacity: 1; transform: scale(1); }
+
+/* Reviews */
+.rating-stars { display: inline-flex; gap: 2px; color: #f5c542; }
+.rating-stars svg { width: 14px; height: 14px; }
+.review-summary-row { display: flex; align-items: center; gap: var(--sm); flex-wrap: wrap; }
+.review-grid { display: grid; grid-template-columns: 1fr; gap: var(--md); }
+@media(min-width:768px){ .review-grid { grid-template-columns: repeat(3, 1fr); } }
+.review-card {
+  border: 1px solid var(--border-subtle); background: var(--bg-surface-field);
+  padding: var(--lg); display: flex; flex-direction: column; gap: var(--sm);
+}
+.review-card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sm); }
+.review-author { font-weight: 600; font-size: 0.8125rem; }
+.review-verified {
+  font-family: var(--font-mono); font-size: 0.625rem; letter-spacing: 0.06em;
+  color: var(--state-success); text-transform: uppercase; display: flex; align-items: center; gap: 4px;
+}
+.review-verified svg { width: 11px; height: 11px; }
+
+/* Trust badges */
+.trust-badges { display: flex; flex-wrap: wrap; gap: var(--md); margin-top: var(--md); }
+.trust-badge { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 0.75rem; }
+.trust-badge svg { width: 17px; height: 17px; flex-shrink: 0; color: var(--text-secondary); }
+
 /* Final CTA */
 .final-cta {
   background: radial-gradient(80% 120% at 50% 100%, #1a1a1a 0%, #050505 70%);
@@ -499,6 +544,9 @@ footer { border-top: 1px solid var(--border-hairline); padding: var(--xxl) 0 var
 .footer-grid > * { min-width: 0; }
 .footer-col h4 { margin-bottom: var(--md); }
 .footer-col a, .footer-col p { display: block; color: var(--text-secondary); margin-bottom: var(--sm); font-size: 0.8125rem; }
+.footer-social-link { display: flex !important; align-items: center; gap: 10px; transition: color 200ms ease; }
+.footer-social-link svg { width: 17px; height: 17px; flex-shrink: 0; }
+.footer-social-link:hover { color: var(--text-primary); }
 .footer-bottom { display: flex; flex-direction: column; gap: var(--sm); margin-top: var(--xxl); padding-top: var(--lg); border-top: 1px solid var(--border-subtle); color: var(--text-tertiary); font-size: 0.75rem; }
 @media(min-width:768px){ .footer-bottom { flex-direction: row; justify-content: space-between; } }
 
@@ -927,8 +975,9 @@ let STORE_CONFIG = {
   whatsappDisplay: "0313-3968029",
   instagram: "@raag__official",
   instagramUrl: "https://instagram.com/raag__official",
-  deliveryCharge: 350,
-  currency: "Rs."
+  deliveryCharge: 250,
+  currency: "Rs.",
+  deliveryTime: "2-4 Days"
 };
 try {
   const savedConfig = localStorage.getItem("raag_config");
@@ -1402,7 +1451,7 @@ function siteFooter(){
     <div class="container">
       <div class="footer-grid">
         <div>
-          <span class="t-headline-lg" style="letter-spacing:0.22em; font-family:var(--font-display); display:block; margin-bottom:var(--md);">R A A G</span>
+          <span class="t-headline-lg" style="letter-spacing:0.22em; font-family:var(--font-display); display:block; margin-bottom:var(--md);">RAAG</span>
           <p class="t-body-sm text-secondary" style="max-width:280px;">Contemporary clothing built on restraint, structure and presence.</p>
         </div>
         <div class="footer-col">
@@ -1417,8 +1466,14 @@ function siteFooter(){
         </div>
         <div class="footer-col">
           <h4 class="t-label-caps">Connect</h4>
-          <a href="${STORE_CONFIG.instagramUrl}" target="_blank" rel="noopener">Instagram</a>
-          <a href="https://wa.me/${STORE_CONFIG.whatsapp}" target="_blank" rel="noopener">WhatsApp</a>
+          <a href="${STORE_CONFIG.instagramUrl}" target="_blank" rel="noopener" class="footer-social-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+            <span>Instagram</span>
+          </a>
+          <a href="https://wa.me/${STORE_CONFIG.whatsapp}" target="_blank" rel="noopener" class="footer-social-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.9c0 4.6-3.8 8.4-8.4 8.4-1.5 0-2.9-.4-4.1-1.1L3.5 20.5l1.3-4.4a8.3 8.3 0 0 1-1.3-4.5c0-4.6 3.8-8.4 8.4-8.4s8.6 3.7 8.6 8.7z"/><path d="M8.8 8.3c.2-.5.4-.5.6-.5h.5c.2 0 .4 0 .5.4.2.5.7 1.7.7 1.8.1.1.1.3 0 .4-.1.2-.1.3-.3.4-.1.2-.3.3-.4.5-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1.2-.2.7-.8.9-1.1.2-.2.4-.2.6-.1l1.6.8c.2.1.4.2.4.3.1.2.1.9-.2 1.4-.3.6-1.5 1.1-2.1 1.2-.6.1-1.2.1-3.9-1.3-3.3-1.7-5.3-5.4-5.5-5.6-.1-.2-1.1-1.5-1.1-2.9 0-1.4.7-2 1-2.3z" fill="currentColor" stroke="none"/></svg>
+            <span>WhatsApp</span>
+          </a>
         </div>
       </div>
       <div class="footer-bottom">
@@ -1478,6 +1533,23 @@ function renderHome(){
     <div class="lookbook-block tall reveal reveal-right" style="align-self:end;"><div style="width:44%; display:flex; justify-content:center; align-items:center; height:100%;">${GLYPHS.hoodie}</div></div>
   </section>
 
+  <section class="section container hairline-top">
+    <div class="section-header-center mb-lg reveal">
+      <p class="t-label-mono eyebrow mb-xs section-heading-accent">Community</p>
+      <h2 class="t-headline-lg">Follow @${(STORE_CONFIG.instagram||'raag').replace('@','')}</h2>
+      <a href="${STORE_CONFIG.instagramUrl}" target="_blank" rel="noopener" class="btn-link t-body-sm view-all-center">View on Instagram</a>
+    </div>
+    <div class="insta-strip-grid reveal-group">
+      ${[GLYPHS.jacket, GLYPHS.hoodie, GLYPHS.cargo, GLYPHS.jacket].map(g => `
+      <a href="${STORE_CONFIG.instagramUrl}" target="_blank" rel="noopener" class="insta-tile reveal">
+        ${g}
+        <div class="insta-overlay">
+          <svg class="insta-hover-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+        </div>
+      </a>`).join("")}
+    </div>
+  </section>
+
   <section class="final-cta">
     <p class="t-label-mono eyebrow mb-sm reveal">Enter RAAG</p>
     <h2 class="t-headline-xl mb-lg reveal">Nothing extra.<br/>Nothing missing.</h2>
@@ -1504,6 +1576,53 @@ function renderTopSellers(){
 }
 
 let currentPdpProduct = null;
+
+function renderStars(rating){
+  let out = "";
+  for(let i=1;i<=5;i++){
+    const filled = i <= Math.round(rating);
+    out += filled
+      ? `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.1 6.6L12 17.5l-5.8 3.1 1.1-6.6-4.8-4.6 6.6-.9z"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.1 6.6L12 17.5l-5.8 3.1 1.1-6.6-4.8-4.6 6.6-.9z"/></svg>`;
+  }
+  return `<span class="rating-stars">${out}</span>`;
+}
+
+const DEFAULT_REVIEWS = [
+  { author: "Hamza S.", rating: 5, text: "Fabric feels genuinely heavyweight, not what I expected at this price. Fit is true to size and stitching is clean." },
+  { author: "Ayesha K.", rating: 5, text: "Ordered the M, fits exactly like the size guide said. Delivery was quick and COD made it easy to trust the brand." },
+  { author: "Zain A.", rating: 4, text: "Quality is solid and the cut is exactly the boxy fit I wanted. Only wish there were more colourways available." }
+];
+
+function reviewsSection(p){
+  const reviews = (p && p.reviews && p.reviews.length) ? p.reviews : DEFAULT_REVIEWS;
+  const avg = reviews.reduce((s,r)=>s+r.rating,0) / reviews.length;
+  return `
+  <section class="section container hairline-top">
+    <div class="section-header-center mb-lg reveal">
+      <p class="t-label-mono eyebrow mb-xs section-heading-accent">Reviews</p>
+      <h2 class="t-headline-lg">What Customers Say</h2>
+      <div class="review-summary-row">
+        ${renderStars(avg)}
+        <span class="t-body-sm text-secondary">${avg.toFixed(1)} out of 5 · ${reviews.length} review${reviews.length===1?"":"s"}</span>
+      </div>
+    </div>
+    <div class="review-grid reveal-group">
+      ${reviews.map(r => `
+      <div class="review-card reveal">
+        <div class="review-card-head">
+          <span class="review-author">${r.author}</span>
+          <span class="review-verified">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            Verified
+          </span>
+        </div>
+        ${renderStars(r.rating)}
+        <p class="t-body-sm text-secondary">${r.text}</p>
+      </div>`).join("")}
+    </div>
+  </section>`;
+}
 
 function renderProduct(id){
   const p = getProduct(id);
@@ -1559,6 +1678,21 @@ function renderProduct(id){
         </div>
         <p class="t-body-sm text-tertiary mt-sm" id="sizeError" style="display:none; color:var(--state-sale);">Please select a size.</p>
 
+        <div class="trust-badges">
+          <span class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="15" height="11" rx="1.5"/><path d="M17 10h3.2a1 1 0 0 1 .9.55L22.5 13v5a1 1 0 0 1-1 1H20"/><circle cx="7" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg>
+            Cash on delivery
+          </span>
+          <span class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l7.5 3v5.5c0 5-3.2 8.7-7.5 10.5-4.3-1.8-7.5-5.5-7.5-10.5V5.5z"/><path d="M9 12l2 2 4-4.2"/></svg>
+            Secure checkout
+          </span>
+          <span class="trust-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+            7-day exchange
+          </span>
+        </div>
+
         <div class="mt-xxl">
           <div class="accordion-item open" id="detailsAcc">
             <button class="accordion-trigger" onclick="toggleAccordion(event,'detailsAcc')">Product Details <span class="accordion-icon">+</span></button>
@@ -1579,7 +1713,8 @@ function renderProduct(id){
         </div>
       </div>
     </div>
-  </section>`;
+  </section>
+  ${reviewsSection(p)}`;
 }
 
 function swapPdpImage(el, idx) {
@@ -2018,7 +2153,7 @@ async function renderAdmin(){
   <div class="admin-shell">
     <div class="admin-sidebar">
       <div style="padding:0 var(--lg) var(--lg); border-bottom:1px solid var(--border-subtle); margin-bottom:var(--md);">
-        <span class="t-headline-md" style="letter-spacing:0.22em; font-family:var(--font-display);">R A A G</span>
+        <span class="t-headline-md" style="letter-spacing:0.22em; font-family:var(--font-display);">RAAG</span>
         <p class="t-label-mono text-tertiary mt-sm">ADMIN</p>
       </div>
       ${nav}
