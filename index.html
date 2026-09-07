@@ -980,13 +980,33 @@ const GLYPHS = {
 };
 
 let PRODUCTS = [];
+
+function saveProductsLocal() {
+  try { localStorage.setItem('raag_products', JSON.stringify(PRODUCTS)); } catch(e) {}
+}
+
+function loadProductsLocal() {
+  try {
+    const raw = localStorage.getItem('raag_products');
+    if (raw) { const arr = JSON.parse(raw); if (Array.isArray(arr) && arr.length) return arr; }
+  } catch(e) {}
+  return null;
+}
+
 async function loadProducts() {
+  // First try API (works on Vercel)
   try {
     const res = await fetch('/api/products');
-    if (res.ok) PRODUCTS = await res.json();
-  } catch (e) {
-    console.error("Failed to load products", e);
-  }
+    if (res.ok) {
+      PRODUCTS = await res.json();
+      saveProductsLocal(); // Sync localStorage with API data
+      return;
+    }
+  } catch (e) {}
+  // Fallback: load from localStorage (works locally after first add)
+  const local = loadProductsLocal();
+  if (local) { PRODUCTS = local; return; }
+  console.warn("No products source available");
 }
 
 function getProduct(id){ return PRODUCTS.find(p => p.id === id); }
@@ -1230,7 +1250,7 @@ function showToast(msg){
   t.textContent = msg;
   t.classList.add("show");
   clearTimeout(showToast._timer);
-  showToast._timer = setTimeout(()=> t.classList.remove("show"), 1800);
+  showToast._timer = setTimeout(()=> t.classList.remove("show"), 4000);
 }
 
 function openDrawer(){
@@ -2212,6 +2232,10 @@ function openAdminProductModal(id = null){
           <div class="field"><label>Sizes (comma separated)</label><input type="text" id="adminProdSizes" placeholder="S, M, L, XL" /></div>
           <div class="field"><label>Out of Stock Sizes</label><input type="text" id="adminProdOOS" placeholder="XL" /></div>
         </div>
+        <div class="checkbox-row mb-md mt-sm">
+          <input type="checkbox" id="adminProdBestSeller" style="width:auto; height:auto;"/>
+          <label for="adminProdBestSeller" style="margin:0; font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em;">Top Seller</label>
+        </div>
         <p class="t-body-sm text-tertiary mb-md mt-sm">Changes persist to database if API connection is active.</p>
         <div style="display:flex; justify-content:flex-end; gap:var(--sm);">
           <button class="btn btn-secondary" onclick="closeAdminModal()">Cancel</button>
@@ -2234,6 +2258,7 @@ function openAdminProductModal(id = null){
     document.getElementById("adminProdStatus").value = p.soldOut ? "soldout" : "active";
     document.getElementById("adminProdSizes").value = (p.sizes||[]).join(", ");
     document.getElementById("adminProdOOS").value = (p.outOfStockSizes||[]).join(", ");
+    document.getElementById("adminProdBestSeller").checked = !!p.bestSeller;
   } else {
     document.getElementById("adminModalTitle").textContent = "Add Product";
     document.getElementById("adminProdName").value = "";
@@ -2241,6 +2266,7 @@ function openAdminProductModal(id = null){
     document.getElementById("adminProdStatus").value = "active";
     document.getElementById("adminProdSizes").value = "S, M, L, XL";
     document.getElementById("adminProdOOS").value = "";
+    document.getElementById("adminProdBestSeller").checked = false;
   }
 }
 
@@ -2289,6 +2315,7 @@ async function confirmDeleteProduct() {
       throw new Error(err);
     }
     PRODUCTS = PRODUCTS.filter(p => p.id !== productToDelete);
+    saveProductsLocal(); // Persist to localStorage
     render();
     showToast("Product deleted");
   } catch (e) {
@@ -2303,6 +2330,7 @@ async function saveAdminProduct(){
   const soldOut = document.getElementById("adminProdStatus").value === "soldout";
   const sizesRaw = document.getElementById("adminProdSizes").value;
   const oosRaw = document.getElementById("adminProdOOS").value;
+  const bestSeller = document.getElementById("adminProdBestSeller").checked;
   
   const sizesArr = sizesRaw ? sizesRaw.split(",").map(s=>s.trim()).filter(Boolean) : ["S","M","L"];
   const oosArr = oosRaw ? oosRaw.split(",").map(s=>s.trim()).filter(Boolean) : [];
@@ -2318,6 +2346,7 @@ async function saveAdminProduct(){
       p.soldOut = soldOut;
       p.sizes = sizesArr;
       p.outOfStockSizes = oosArr;
+      p.bestSeller = bestSeller;
       isEdit = true;
     }
   } else {
@@ -2332,7 +2361,7 @@ async function saveAdminProduct(){
       images: [],
       sizes: sizesArr,
       outOfStockSizes: oosArr,
-      bestSeller: false,
+      bestSeller: bestSeller,
       limited: false,
       soldOut: soldOut,
       edition: "DROP 004",
@@ -2347,17 +2376,24 @@ async function saveAdminProduct(){
   
   closeAdminModal();
   render();
-  
+  saveProductsLocal(); // Persist to localStorage
+  showToast(isEdit ? "Product updated" : "Product added");
+
+  // Try to sync with database (only works on deployed Vercel, not locally)
   try {
     const res = await fetch('/api/products', {
       method: isEdit ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(p)
     });
-    if (!res.ok) throw new Error("API Error");
-    showToast("Changes saved");
+    if (!res.ok) {
+      const txt = await res.text();
+      let errStr = txt;
+      try { errStr = JSON.parse(txt).error || txt; } catch(_){}
+      console.warn("DB sync failed:", errStr);
+    }
   } catch(e) {
-    showToast("Failed to save product to database");
+    console.warn("DB sync skipped (running locally or no connection):", e.message);
   }
 }
 
