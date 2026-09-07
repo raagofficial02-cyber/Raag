@@ -234,9 +234,13 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 @media(min-width:1024px){ .product-grid { grid-template-columns: repeat(4, 1fr); gap: 28px; } }
 .product-grid > * { min-width: 0; }
 
+/* Homepage showcase rows (Collection / Top Sellers) — always exactly 3 per line on tablet+ */
+@media(min-width:768px){ .product-grid-3 { grid-template-columns: repeat(3, 1fr) !important; } }
+@media(min-width:1024px){ .product-grid-3 { grid-template-columns: repeat(3, 1fr) !important; gap: 28px; } }
+
 .product-card { display: block; cursor: pointer; text-decoration: none; color: inherit; }
 .product-media {
-  position: relative; aspect-ratio: 4 / 5;
+  position: relative; aspect-ratio: 3 / 4;
   background: radial-gradient(circle at 50% 35%, #222222 0%, #121212 60%, #060606 100%);
   overflow: hidden; border: 1px solid var(--border-subtle);
   transition: border-color 220ms ease;
@@ -662,6 +666,11 @@ table.admin-table { width: 100%; border-collapse: collapse; min-width: 520px; }
   max-width: 100%;
 }
 .flex-between > *:first-child { min-width: 0; }
+.section-header-center {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: var(--sm); width: 100%;
+}
+.section-header-center .view-all-center { margin-top: var(--xs); }
 .hidden { display: none !important; }
 .center-text { text-align: center; }
 
@@ -746,7 +755,7 @@ table.admin-table { width: 100%; border-collapse: collapse; min-width: 520px; }
   transform: translateY(-4px);
 }
 .product-media {
-  position: relative; aspect-ratio: 4 / 5;
+  position: relative; aspect-ratio: 3 / 4;
   background: radial-gradient(circle at 50% 35%, #222222 0%, #121212 60%, #060606 100%);
   overflow: hidden; border: 1px solid var(--border-subtle);
   transition: border-color 300ms ease, box-shadow 300ms ease;
@@ -1063,7 +1072,7 @@ function resolveProductImages(p) {
 // only on a genuine load failure — never shown ahead of a real image.
 function mediaWithFallback(url, alt, glyph, extraAttrs) {
   return `<div style="width:100%; height:100%; position:relative;">
-    <img src="${url}" alt="${alt}" style="width:100%; height:100%; object-fit:cover; object-position:center top; position:relative;" loading="lazy" ${extraAttrs || ""} onerror="handleMediaImgError(this)" />
+    <img src="${url}" alt="${alt}" style="width:100%; height:100%; object-fit:contain; object-position:center center; position:relative;" loading="lazy" ${extraAttrs || ""} onerror="handleMediaImgError(this)" />
     <div style="display:none; position:absolute; inset:0; align-items:center; justify-content:center;">${glyph}</div>
   </div>`;
 }
@@ -1442,25 +1451,21 @@ function renderHome(){
   </section>
 
   <section class="section container">
-    <div class="flex-between mb-lg reveal">
-      <div>
-        <p class="t-label-mono eyebrow mb-xs section-heading-accent">Curated Run</p>
-        <h2 class="t-headline-lg">Collection</h2>
-      </div>
-      <a href="#/collection" class="btn-link t-body-sm">View All</a>
+    <div class="section-header-center mb-lg reveal">
+      <p class="t-label-mono eyebrow mb-xs section-heading-accent">Curated Run</p>
+      <h2 class="t-headline-lg">Collection</h2>
+      <a href="#/collection" class="btn-link t-body-sm view-all-center">View All</a>
     </div>
-    <div class="product-grid reveal-group">${featured.map(productCard).join("")}</div>
+    <div class="product-grid product-grid-3 reveal-group">${featured.map(productCard).join("")}</div>
   </section>
 
   <section class="section container hairline-top">
-    <div class="flex-between mb-lg reveal">
-      <div>
-        <p class="t-label-mono eyebrow mb-xs section-heading-accent">Most Coveted</p>
-        <h2 class="t-headline-lg">Top Sellers</h2>
-      </div>
-      <a href="#/top-sellers" class="btn-link t-body-sm">View All</a>
+    <div class="section-header-center mb-lg reveal">
+      <p class="t-label-mono eyebrow mb-xs section-heading-accent">Most Coveted</p>
+      <h2 class="t-headline-lg">Top Sellers</h2>
+      <a href="#/top-sellers" class="btn-link t-body-sm view-all-center">View All</a>
     </div>
-    <div class="product-grid reveal-group">${bestSellers.map(productCard).join("")}</div>
+    <div class="product-grid product-grid-3 reveal-group">${bestSellers.map(productCard).join("")}</div>
   </section>
 
   <section class="section container hairline-top">
@@ -1483,11 +1488,11 @@ function renderHome(){
 
 function renderCollectionLike(title, description, products){
   return `
-  <section class="section container">
+  <section class="section container" style="text-align:center;">
     <p class="t-label-mono eyebrow mb-sm">${products.length} PIECE${products.length===1?"":"S"}</p>
     <h1 class="t-headline-xl mb-md">${title}</h1>
-    <p class="t-body-lg text-secondary" style="max-width:520px; margin-bottom:var(--xxl);">${description}</p>
-    <div class="product-grid">${products.map(productCard).join("")}</div>
+    <p class="t-body-lg text-secondary" style="max-width:520px; margin:0 auto var(--xxl);">${description}</p>
+    <div class="product-grid product-grid-3 reveal-group" style="text-align:left;">${products.map(productCard).join("")}</div>
   </section>`;
 }
 
