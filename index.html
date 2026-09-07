@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>RAAG — Timeless Clothing &amp; Quiet Luxury</title>
+<title>RAAG | Timeless Clothing &amp; Quiet Luxury</title>
+<meta name="description" content="Discover RAAG - Timeless clothing, heavyweight fabrics, and quiet luxury built for everyday wear. Delivering across Pakistan." />
+<meta name="keywords" content="RAAG, Timeless Clothing, Quiet Luxury, Fashion, Pakistan, Heavyweight fabrics, Streetwear" />
+<link rel="canonical" href="https://raag-official.com/" />
+<meta property="og:title" content="RAAG | Timeless Clothing &amp; Quiet Luxury" />
+<meta property="og:description" content="Discover RAAG - Timeless clothing, heavyweight fabrics, and quiet luxury built for everyday wear. Delivering across Pakistan." />
+<meta property="og:url" content="https://raag-official.com/" />
+<meta property="og:type" content="website" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -536,6 +543,49 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
   background: radial-gradient(80% 120% at 50% 100%, #1a1a1a 0%, #050505 70%);
   text-align: center; padding: var(--xxxxl) var(--gutter);
   border-top: 1px solid var(--border-hairline);
+}
+
+/* 404 Page */
+.page-404 {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: radial-gradient(ellipse at 50% 30%, #141414 0%, #070707 70%);
+  padding: var(--xxl) var(--gutter);
+  position: relative;
+  overflow: hidden;
+}
+.page-404-inner {
+  position: relative;
+  z-index: 2;
+}
+.four-oh-four-number {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(7rem, 25vw, 14rem);
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,255,255,0.12);
+  margin-bottom: 0.5rem;
+  user-select: none;
+}
+.four-oh-four-glyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(220px, 40vw);
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 1;
+}
+.four-oh-four-glyph svg {
+  width: 100%;
+  height: auto;
+  stroke: #fff;
 }
 
 footer { border-top: 1px solid var(--border-hairline); padding: var(--xxl) 0 var(--xl); background: var(--bg-pure); }
@@ -1540,11 +1590,18 @@ function renderHome(){
       <a href="${STORE_CONFIG.instagramUrl}" target="_blank" rel="noopener" class="btn-link t-body-sm view-all-center">View on Instagram</a>
     </div>
     <div class="insta-strip-grid reveal-group">
-      ${[GLYPHS.jacket, GLYPHS.hoodie, GLYPHS.cargo, GLYPHS.jacket].map(g => `
+      ${MOCK_COMMUNITY.length > 0 ? MOCK_COMMUNITY.slice(0,4).map(c => `
+      <a href="${STORE_CONFIG.instagramUrl}" target="_blank" rel="noopener" class="insta-tile reveal" style="padding:0;">
+        <img src="${c.imageUrl}" style="width:100%; height:100%; object-fit:cover;" />
+        <div class="insta-overlay">
+          <svg class="insta-hover-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:24px; color:#fff;"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+        </div>
+      </a>`).join("") :
+      [GLYPHS.jacket, GLYPHS.hoodie, GLYPHS.cargo, GLYPHS.jacket].map(g => `
       <a href="${STORE_CONFIG.instagramUrl}" target="_blank" rel="noopener" class="insta-tile reveal">
         ${g}
         <div class="insta-overlay">
-          <svg class="insta-hover-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+          <svg class="insta-hover-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:24px; color:#fff;"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
         </div>
       </a>`).join("")}
     </div>
@@ -1595,8 +1652,9 @@ const DEFAULT_REVIEWS = [
 ];
 
 function reviewsSection(p){
-  const reviews = (p && p.reviews && p.reviews.length) ? p.reviews : DEFAULT_REVIEWS;
-  const avg = reviews.reduce((s,r)=>s+r.rating,0) / reviews.length;
+  let productReviews = MOCK_REVIEWS.filter(r => r.productId === p.id);
+  const reviews = productReviews.length > 0 ? productReviews : DEFAULT_REVIEWS;
+  const avg = reviews.reduce((s,r)=>s+r.rating,0) / reviews.length || 5;
   return `
   <section class="section container hairline-top">
     <div class="section-header-center mb-lg reveal">
@@ -1607,21 +1665,44 @@ function reviewsSection(p){
         <span class="t-body-sm text-secondary">${avg.toFixed(1)} out of 5 · ${reviews.length} review${reviews.length===1?"":"s"}</span>
       </div>
     </div>
-    <div class="review-grid reveal-group">
+    <div class="reviews-grid reveal-group" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--md);">
       ${reviews.map(r => `
-      <div class="review-card reveal">
-        <div class="review-card-head">
-          <span class="review-author">${r.author}</span>
-          <span class="review-verified">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-            Verified
-          </span>
+      <div class="review-card reveal" style="padding: var(--md); border: 1px solid var(--border-subtle); background: var(--bg-surface-elevated);">
+        <div style="display:flex; justify-content:space-between; margin-bottom: var(--sm);">
+          <span class="t-body-md" style="font-weight:600;">${r.author || r.customerName}</span>
+          ${renderStars(r.rating)}
         </div>
-        ${renderStars(r.rating)}
-        <p class="t-body-sm text-secondary">${r.text}</p>
+        <p class="t-body-sm text-secondary">${r.text || r.comment}</p>
       </div>`).join("")}
     </div>
+    <div class="mt-xl reveal" style="max-width: 500px; margin: 0 auto; background: var(--bg-surface-elevated); padding: var(--lg); border: 1px solid var(--border-subtle);">
+      <h3 class="t-headline-md mb-md">Write a Review</h3>
+      <form onsubmit="submitReview(event, '${p.id}')">
+        <div class="field"><label>Name</label><input type="text" name="customerName" required /></div>
+        <div class="field"><label>Rating (1-5)</label><input type="number" name="rating" min="1" max="5" value="5" required /></div>
+        <div class="field"><label>Review</label><textarea name="comment" required></textarea></div>
+        <button type="submit" class="btn btn-primary btn-block">Submit Review</button>
+      </form>
+    </div>
   </section>`;
+}
+
+function submitReview(e, productId) {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const review = {
+    id: 'rev-' + Date.now(),
+    productId,
+    customerName: formData.get('customerName'),
+    rating: parseInt(formData.get('rating'), 10),
+    comment: formData.get('comment'),
+    date: new Date().toISOString()
+  };
+  MOCK_REVIEWS.unshift(review);
+  try { localStorage.setItem('raag_reviews', JSON.stringify(MOCK_REVIEWS)); } catch(err) {}
+  showToast("Thank you for your review!");
+  e.target.reset();
+  render();
 }
 
 function renderProduct(id){
@@ -1674,8 +1755,8 @@ function renderProduct(id){
         </div>
 
         <div class="mt-xl" style="display:flex; flex-direction:column; gap:var(--sm);">
-          <button class="btn btn-primary btn-block" id="addToBagBtn" onclick="handleAddToBag('${p.id}')" ${p.soldOut ? 'disabled' : ''}>${p.soldOut ? 'Sold Out' : 'Add to Bag'}</button>
-          ${p.soldOut ? '' : `<a href="#/checkout" class="btn btn-secondary btn-block" onclick="handleAddToBag('${p.id}', true)">Buy Now</a>`}
+          <button class="btn btn-primary btn-block" id="addToBagBtn" onclick="handleAddToBag('${p.id}')">${p.soldOut ? 'Out of Stock' : 'Add to Bag'}</button>
+          ${p.soldOut ? '' : `<button class="btn btn-secondary btn-block" onclick="handleAddToBag('${p.id}', true)">Buy Now</button>`}
         </div>
         <p class="t-body-sm text-tertiary mt-sm" id="sizeError" style="display:none; color:var(--state-sale);">Please select a size.</p>
 
@@ -1750,6 +1831,12 @@ function toggleAccordion(e, id){
   document.getElementById(id).classList.toggle("open");
 }
 function handleAddToBag(productId, andCheckout){
+  const p = getProduct(productId);
+  if(p && p.soldOut) {
+    showToast("This item is currently out of stock.");
+    return;
+  }
+  
   if(!pdpSelectedSize){
     document.getElementById("sizeError").style.display = "block";
     return;
@@ -1757,6 +1844,30 @@ function handleAddToBag(productId, andCheckout){
   const qty = parseInt(document.getElementById("pdpQty").dataset.qty,10);
   addToCart(productId, pdpSelectedSize, qty);
   if(!andCheckout) pdpSelectedSize = null;
+}
+
+function render404Page(){
+  return `
+  <section class="page-404">
+    <div class="page-404-inner">
+      <p class="t-label-mono eyebrow mb-md" style="letter-spacing:0.22em;">RAAG — ERROR</p>
+      <div class="four-oh-four-number">404</div>
+      <h1 class="t-headline-xl mb-md" style="letter-spacing:-0.03em;">Page Not Found</h1>
+      <p class="t-body-md text-secondary mb-xl" style="max-width:380px; margin-left:auto; margin-right:auto;">
+        This page doesn't exist or has been moved. Maybe you were looking for something in our collection?
+      </p>
+      <div style="display:flex; gap: var(--md); justify-content:center; flex-wrap:wrap;">
+        <a href="#/" class="btn btn-primary">Back Home</a>
+        <a href="#/collection" class="btn btn-secondary">View Collection</a>
+      </div>
+      <div class="four-oh-four-glyph">
+        <svg viewBox="0 0 100 120" fill="none" stroke="currentColor" stroke-width="1">
+          <path d="M30 10 L20 22 L28 30 L28 110 L72 110 L72 30 L80 22 L70 10 L58 16 L50 20 L42 16 Z"/>
+          <line x1="50" y1="20" x2="50" y2="108"/>
+        </svg>
+      </div>
+    </div>
+  </section>`;
 }
 
 function renderAbout(){
@@ -2046,6 +2157,8 @@ function renderLogin(){
    ============================================================ */
 let MOCK_ORDERS = [];
 let MOCK_CUSTOMERS = [];
+let MOCK_COMMUNITY = [];
+let MOCK_REVIEWS = [];
 
 async function loadAdminData() {
   // Try API first (works on Vercel)
@@ -2075,6 +2188,14 @@ async function loadAdminData() {
     const saved = localStorage.getItem('raag_customers');
     if (saved) try { MOCK_CUSTOMERS = JSON.parse(saved); } catch(_) {}
   }
+
+  // Load Community
+  const savedComm = localStorage.getItem('raag_community');
+  if (savedComm) try { MOCK_COMMUNITY = JSON.parse(savedComm); } catch(_) {}
+
+  // Load Reviews
+  const savedRev = localStorage.getItem('raag_reviews');
+  if (savedRev) try { MOCK_REVIEWS = JSON.parse(savedRev); } catch(_) {}
 }
 
 const ADMIN_TABS = [
@@ -2082,6 +2203,8 @@ const ADMIN_TABS = [
   {id:"products", label:"Products"},
   {id:"orders", label:"Orders"},
   {id:"customers", label:"Customers"},
+  {id:"community", label:"Community"},
+  {id:"reviews", label:"Reviews"},
   {id:"settings", label:"Settings"}
 ];
 
@@ -2147,6 +2270,8 @@ async function renderAdmin(){
   else if(tab === "products") content = renderAdminProducts();
   else if(tab === "orders") content = renderAdminOrders();
   else if(tab === "customers") content = await renderAdminCustomers();
+  else if(tab === "community") content = renderAdminCommunity();
+  else if(tab === "reviews") content = renderAdminReviews();
   else if(tab === "settings") content = renderAdminSettings();
   else if(tab === "order" ) content = renderAdminOrderDetail(routeSubParam);
 
@@ -2610,6 +2735,79 @@ async function deleteCustomer(id) {
   }
 }
 
+function renderAdminCommunity() {
+  return `
+  <div class="admin-section-head">
+    <h1 class="t-headline-lg">Community</h1>
+    <button class="btn btn-primary" onclick="document.getElementById('communityUpload').click()">Upload Photo</button>
+    <input type="file" id="communityUpload" accept="image/*" style="display:none" onchange="handleCommunityUpload(event)" />
+  </div>
+  <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--md);">
+    ${MOCK_COMMUNITY.map(c => `
+      <div style="border: 1px solid var(--border-subtle); padding: var(--sm); background: var(--bg-surface-elevated);">
+        <img src="${c.imageUrl}" style="width: 100%; aspect-ratio: 4/5; object-fit: cover;" />
+        <p class="t-body-sm mt-sm" style="color: var(--text-secondary);">${c.caption || 'No caption'}</p>
+        <button class="btn-link t-body-sm mt-sm" style="color: var(--state-sale);" onclick="deleteCommunityPhoto('${c.id}')">Delete</button>
+      </div>
+    `).join("")}
+    ${MOCK_COMMUNITY.length === 0 ? '<p class="text-tertiary">No community photos uploaded yet.</p>' : ''}
+  </div>`;
+}
+
+async function handleCommunityUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const caption = prompt("Enter a caption or Instagram handle (optional):") || "";
+    const newPhoto = { id: 'comm-' + Date.now(), imageUrl: event.target.result, caption };
+    MOCK_COMMUNITY.unshift(newPhoto);
+    try { localStorage.setItem('raag_community', JSON.stringify(MOCK_COMMUNITY)); } catch(e) {}
+    render();
+    showToast("Community photo added");
+  };
+  reader.readAsDataURL(file);
+}
+
+function deleteCommunityPhoto(id) {
+  if (!confirm("Delete this photo?")) return;
+  MOCK_COMMUNITY = MOCK_COMMUNITY.filter(c => c.id !== id);
+  try { localStorage.setItem('raag_community', JSON.stringify(MOCK_COMMUNITY)); } catch(e) {}
+  render();
+  showToast("Photo deleted");
+}
+
+function renderAdminReviews() {
+  return `
+  <div class="admin-section-head"><h1 class="t-headline-lg">Reviews</h1></div>
+  <div class="admin-table-wrap"><table class="admin-table">
+    <thead><tr><th>Product</th><th>Customer</th><th>Rating</th><th>Comment</th><th>Actions</th></tr></thead>
+    <tbody>
+      ${MOCK_REVIEWS.map(r => {
+        const prod = getProduct(r.productId);
+        return `<tr>
+          <td>${prod ? prod.name : r.productId}</td>
+          <td>${r.customerName}</td>
+          <td>${r.rating}/5</td>
+          <td>${r.comment || '-'}</td>
+          <td>
+            <button class="btn-link t-body-sm" style="color:var(--state-sale);" onclick="deleteReview('${r.id}')">Delete</button>
+          </td>
+        </tr>`;
+      }).join("")}
+      ${MOCK_REVIEWS.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding:32px;">No reviews yet.</td></tr>' : ''}
+    </tbody>
+  </table></div>`;
+}
+
+function deleteReview(id) {
+  if (!confirm("Delete this review?")) return;
+  MOCK_REVIEWS = MOCK_REVIEWS.filter(r => r.id !== id);
+  try { localStorage.setItem('raag_reviews', JSON.stringify(MOCK_REVIEWS)); } catch(e) {}
+  render();
+  showToast("Review deleted");
+}
+
 function renderAdminSettings(){
   return `
   <div class="admin-section-head"><h1 class="t-headline-lg">Settings</h1></div>
@@ -2655,7 +2853,7 @@ async function render(){
   else if(currentRoute === "/checkout") html = renderCheckout();
   else if(currentRoute === "/login") html = renderLogin();
   else {
-    html = `<section class="empty-state" style="min-height:60vh;"><h1 class="t-headline-lg">Page not found</h1><a href="#/" class="btn btn-primary">Back Home</a></section>`;
+    html = render404Page();
   }
 
   app.innerHTML = html + (showFooter ? siteFooter() : "");

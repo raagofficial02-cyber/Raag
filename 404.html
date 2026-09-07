@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>404 — Page Not Found | RAAG</title>
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080808;
+    color: #fff;
+    font-family: 'Hanken Grotesk', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    overflow: hidden;
+    position: relative;
+  }
+  .glyph-bg {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(320px, 60vw);
+    opacity: 0.04;
+    pointer-events: none;
+  }
+  .glyph-bg svg { width: 100%; height: auto; stroke: #fff; }
+  .eyebrow {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 1rem;
+  }
+  .big-404 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(7rem, 25vw, 14rem);
+    line-height: 1;
+    letter-spacing: -0.06em;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.12);
+    margin-bottom: 0.5rem;
+    user-select: none;
+    position: relative;
+    z-index: 2;
+  }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 2;
+  }
+  p {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    max-width: 380px;
+    margin: 0 auto 2rem;
+    position: relative;
+    z-index: 2;
+  }
+  .btns {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 2;
+  }
+  a.btn-primary {
+    background: #fff; color: #000;
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 48px; padding: 0 1.75rem;
+    font-weight: 600; font-size: 0.75rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    text-decoration: none;
+    transition: background 220ms ease;
+  }
+  a.btn-primary:hover { background: #e5e5e5; }
+  a.btn-secondary {
+    background: transparent; color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 48px; padding: 0 1.75rem;
+    font-weight: 600; font-size: 0.75rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    text-decoration: none;
+    transition: background 220ms ease, border-color 220ms ease;
+  }
+  a.btn-secondary:hover { background: #fff; color: #000; }
+</style>
+</head>
+<body>
+  <div class="glyph-bg">
+    <svg viewBox="0 0 100 120" fill="none">
+      <path d="M30 10 L20 22 L28 30 L28 110 L72 110 L72 30 L80 22 L70 10 L58 16 L50 20 L42 16 Z"/>
+      <line x1="50" y1="20" x2="50" y2="108"/>
+    </svg>
+  </div>
+
+  <p class="eyebrow">RAAG — ERROR</p>
+  <div class="big-404">404</div>
+  <h1>Page Not Found</h1>
+  <p>This page doesn't exist or has been moved. Maybe you were looking for something in our collection?</p>
+  <div class="btns">
+    <a href="/" class="btn-primary">Back Home</a>
+    <a href="/#/collection" class="btn-secondary">View Collection</a>
+  </div>
+</body>
+</html>
