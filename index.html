@@ -37,7 +37,7 @@
 
   --xs: 0.25rem; --sm: 0.5rem; --md: 1rem; --lg: 1.5rem;
   --xl: 2rem; --xxl: 3rem; --xxxl: 4.5rem; --xxxxl: 6rem;
-  --gutter: 1rem; --max-editorial: 1440px; --drawer-width: 440px;
+  --gutter: 1.25rem; --max-editorial: 1440px; --drawer-width: 440px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,7 +57,7 @@ img, svg { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
 ul { list-style: none; }
-input, textarea, select { font-family: inherit; background: none; border: none; color: inherit; }
+input, textarea, select { font-family: inherit; background: none; border: none; color: inherit; max-width: 100%; box-sizing: border-box; }
 :focus-visible { outline: 1.5px solid #fff; outline-offset: 2px; }
 
 /* Type scale */
@@ -81,9 +81,10 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
   margin: 0 auto;
   padding: 0 var(--gutter);
   box-sizing: border-box;
-  overflow: hidden;
 }
-@media(min-width:1024px){ .container { padding: 0 2rem; } }
+@media(min-width:640px)  { .container { padding: 0 2rem; } }
+@media(min-width:1024px) { .container { padding: 0 3rem; } }
+@media(min-width:1280px) { .container { padding: 0 4rem; } }
 
 /* ============================================================
    NAVBAR & BRANDING LOGO
@@ -109,9 +110,9 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
   height: 100%;
   position: relative;
 }
-@media(min-width:1024px){
-  .nav-inner { padding: 0 2rem; }
-}
+@media(min-width:640px)  { .nav-inner { padding: 0 2rem; } }
+@media(min-width:1024px) { .nav-inner { padding: 0 3rem; } }
+@media(min-width:1280px) { .nav-inner { padding: 0 4rem; } }
 
 .nav-left { display: flex; align-items: center; gap: var(--xl); height: 100%; }
 .nav-left .nav-link { display: none; }
@@ -231,6 +232,7 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 @media(min-width:480px){ .product-grid { gap: 16px; } }
 @media(min-width:768px){ .product-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; } }
 @media(min-width:1024px){ .product-grid { grid-template-columns: repeat(4, 1fr); gap: 28px; } }
+.product-grid > * { min-width: 0; }
 
 .product-card { display: block; cursor: pointer; text-decoration: none; color: inherit; }
 .product-media {
@@ -300,7 +302,7 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
+  object-position: center 10%;
   display: block;
 }
 
@@ -490,6 +492,7 @@ input, textarea, select { font-family: inherit; background: none; border: none; 
 footer { border-top: 1px solid var(--border-hairline); padding: var(--xxl) 0 var(--xl); background: var(--bg-pure); }
 .footer-grid { display: grid; gap: var(--xl); grid-template-columns: 1fr; }
 @media(min-width:768px){ .footer-grid { grid-template-columns: 2fr 1fr 1fr 1fr; } }
+.footer-grid > * { min-width: 0; }
 .footer-col h4 { margin-bottom: var(--md); }
 .footer-col a, .footer-col p { display: block; color: var(--text-secondary); margin-bottom: var(--sm); font-size: 0.8125rem; }
 .footer-bottom { display: flex; flex-direction: column; gap: var(--sm); margin-top: var(--xxl); padding-top: var(--lg); border-top: 1px solid var(--border-subtle); color: var(--text-tertiary); font-size: 0.75rem; }
@@ -518,8 +521,9 @@ footer { border-top: 1px solid var(--border-hairline); padding: var(--xxl) 0 var
 .cart-line { display: grid; grid-template-columns: 76px 1fr; gap: var(--md); padding: var(--lg) 0; border-bottom: 1px solid var(--border-subtle); }
 .cart-line-thumb { width: 76px; height: 96px; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center; }
 .cart-line-thumb svg { width: 50%; }
-.cart-line-info { display: flex; flex-direction: column; gap: 2px; }
-.cart-line-top { display: flex; justify-content: space-between; gap: var(--sm); }
+.cart-line-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cart-line-top { display: flex; justify-content: space-between; gap: var(--sm); min-width: 0; }
+.cart-line-top > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cart-line-variant { color: var(--text-tertiary); font-size: 0.8125rem; }
 .qty-stepper { display: flex; align-items: center; border: 1px solid var(--border-hairline); width: fit-content; margin-top: var(--sm); }
 .qty-stepper button { width: 32px; height: 32px; background: none; border: none; color: #fff; font-family: var(--font-mono); }
@@ -594,6 +598,7 @@ footer { border-top: 1px solid var(--border-hairline); padding: var(--xxl) 0 var
 /* Admin */
 .admin-shell { display: grid; grid-template-columns: 1fr; min-height: calc(100vh - 64px); }
 @media(min-width:900px){ .admin-shell { grid-template-columns: 260px 1fr; } }
+.admin-shell > * { min-width: 0; }
 .admin-modal { max-height: calc(100vh - 2rem); overflow-y: auto; }
 .admin-sidebar { background: #080808; border-right: 1px solid var(--border-subtle); padding: var(--lg) 0; display: none; }
 @media(min-width:900px){ .admin-sidebar { display: block; } }
@@ -621,6 +626,7 @@ table.admin-table { width: 100%; border-collapse: collapse; min-width: 520px; }
 .admin-table tr:hover td { background: #141414; }
 .status-pill { font-family: var(--font-mono); font-size: 0.6875rem; padding: 3px 8px; border: 1px solid var(--border-hairline); text-transform: uppercase; display: inline-block; }
 .admin-section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--lg); flex-wrap: wrap; gap: var(--md); }
+.admin-section-head > *:first-child { min-width: 0; }
 .admin-section-head .btn { flex-shrink: 0; }
 @media(max-width:600px){ .admin-section-head .btn { width: 100%; } }
 
@@ -651,10 +657,11 @@ table.admin-table { width: 100%; border-collapse: collapse; min-width: 520px; }
   justify-content: space-between;
   align-items: center;
   gap: var(--sm);
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   width: 100%;
   max-width: 100%;
 }
+.flex-between > *:first-child { min-width: 0; }
 .hidden { display: none !important; }
 .center-text { text-align: center; }
 
