@@ -17,6 +17,7 @@ export default async function handler(req, res) {
       bestSeller: p.best_seller,
       soldOut: p.sold_out,
       compareAt: p.compare_at,
+      promoPrice: p.promo_price,
       sizeGuide: p.size_guide,
       images: typeof p.images === 'string' ? JSON.parse(p.images) : p.images,
       details: typeof p.details === 'string' ? JSON.parse(p.details) : p.details
@@ -34,6 +35,7 @@ export default async function handler(req, res) {
       category: p.category,
       price: p.price,
       compare_at: p.compareAt || null,
+      promo_price: p.promoPrice || null,
       description: p.description,
       sizes: JSON.stringify(p.sizes || []),
       out_of_stock_sizes: JSON.stringify(p.outOfStockSizes || []),
@@ -61,6 +63,7 @@ export default async function handler(req, res) {
       category: p.category,
       price: p.price,
       compare_at: p.compareAt || null,
+      promo_price: p.promoPrice || null,
       description: p.description,
       sizes: JSON.stringify(p.sizes || []),
       out_of_stock_sizes: JSON.stringify(p.outOfStockSizes || []),

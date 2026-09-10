@@ -58,6 +58,41 @@ module.exports = async function handler(req, res) {
       return deleteOrderById(res, o.orderId || o.id);
     }
 
+    // Recalculate true totals on backend for security
+    let trueSubtotal = 0;
+    
+    // Check if promo code is valid
+    let promoValid = false;
+    if (o.promoCode) {
+      const { data: promoData } = await supabase.from('promo_codes').select('*').eq('code', o.promoCode).single();
+      if (promoData && promoData.status !== false) {
+         if (!promoData.expiry_date || new Date(promoData.expiry_date) > new Date()) {
+            promoValid = true;
+         }
+      }
+    }
+
+    const items = o.items || [];
+    const itemIds = items.map(item => item.productId);
+    const { data: productsData } = await supabase.from('products').select('*').in('id', itemIds);
+    const productMap = {};
+    if (productsData) {
+      productsData.forEach(p => productMap[p.id] = p);
+    }
+
+    for (let item of items) {
+      const p = productMap[item.productId];
+      if (p) {
+        let priceToUse = p.price;
+        if (promoValid && p.promo_price) {
+          priceToUse = p.promo_price;
+        }
+        trueSubtotal += priceToUse * item.qty;
+      }
+    }
+
+    const trueTotal = trueSubtotal + (o.deliveryCharges || 0);
+
     const dbOrder = {
       id: o.orderId,
       customer_name: o.customerName,
@@ -69,10 +104,10 @@ module.exports = async function handler(req, res) {
       postal_code: o.postalCode || null,
       whatsapp: o.whatsapp || null,
       notes: o.notes || null,
-      items: JSON.stringify(o.items || []),
-      subtotal: o.subtotal,
+      items: JSON.stringify(items),
+      subtotal: trueSubtotal,
       delivery_charges: o.deliveryCharges,
-      total: o.total,
+      total: trueTotal,
       payment_method: o.paymentMethod || 'Cash on Delivery',
       status: o.status || 'New',
       created_at: o.createdAt || new Date().toISOString()

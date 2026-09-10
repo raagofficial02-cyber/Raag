@@ -941,7 +941,74 @@ table.admin-table { width: 100%; border-collapse: collapse; min-width: 520px; }
 <!-- ============================================================
      NAVBAR
      ============================================================ -->
-<nav class="navbar">
+<style>
+.premium-promo-banner {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  right: 0;
+  z-index: 490;
+  background: var(--bg-surface-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px var(--gutter);
+  text-align: center;
+  gap: 12px;
+}
+@media(min-width: 1024px) {
+  .premium-promo-banner {
+    top: 64px;
+    flex-direction: row;
+    padding: 16px var(--gutter);
+    gap: 24px;
+  }
+}
+.promo-text {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-transform: uppercase;
+}
+.promo-text strong {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  display: inline-block;
+  margin: 0 6px;
+}
+.promo-timer {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.page.has-promo {
+  padding-top: calc(56px + 90px);
+}
+@media(min-width: 1024px) {
+  .page.has-promo {
+    padding-top: calc(64px + 70px);
+  }
+}
+</style>
+<div id="announcementBanner" class="premium-promo-banner" style="display:none;">
+  <div class="promo-text" id="announcementTextEl"></div>
+  <div class="promo-timer" id="announcementTimerContainer" style="display:none;">
+    ENDS IN <span id="announcementTimerEl"></span>
+  </div>
+</div>
+<nav class="navbar" id="siteNavbar">
   <div class="nav-inner">
     <div class="nav-left">
       <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
@@ -1125,6 +1192,78 @@ async function loadProducts() {
   saveProductsLocal();
 }
 
+let timerInterval = null;
+async function loadAnnouncement() {
+  let data = null;
+  try {
+    const res = await fetch('/api/settings');
+    if (res.ok) data = await res.json();
+  } catch (e) {}
+
+  if (!data || Object.keys(data).length === 0) {
+    data = JSON.parse(localStorage.getItem('raag_announcement') || '{"is_active":false, "show_timer":false, "timer_duration":60, "text":"Use promo code {code} to get exclusive discount", "promo_code":"RAAG"}');
+  }
+
+  if (data && data.is_active) {
+    document.getElementById('announcementBanner').style.display = 'flex';
+    document.getElementById('siteNavbar').style.top = '0';
+    const pageEl = document.querySelector('.page');
+    if(pageEl) pageEl.classList.add('has-promo');
+    
+    let activePromo = data.promo_code;
+    let promos = [];
+    try {
+      const res2 = await fetch('/api/promocodes');
+      if (res2.ok) promos = await res2.json();
+    } catch(e) {}
+    if (promos.length === 0) {
+      promos = JSON.parse(localStorage.getItem('raag_promocodes') || '[]');
+    }
+    const firstActive = promos.find(p => p.status);
+    if (firstActive) activePromo = firstActive.code;
+    
+    let text = data.text || '';
+    text = text.replace('{code}', `<strong>${activePromo}</strong>`);
+    
+    document.getElementById('announcementTextEl').innerHTML = `🎉 ${text} 🎉`;
+
+    if (data.show_timer && data.timer_duration) {
+      document.getElementById('announcementTimerContainer').style.display = 'flex';
+      startCountdown(data.timer_duration);
+    } else {
+      document.getElementById('announcementTimerContainer').style.display = 'none';
+    }
+  } else {
+    document.getElementById('announcementBanner').style.display = 'none';
+    const pageEl = document.querySelector('.page');
+    if(pageEl) pageEl.classList.remove('has-promo');
+  }
+}
+
+function startCountdown(durationMinutes) {
+  let endTime = localStorage.getItem('raag_promo_end');
+  if (!endTime) {
+    endTime = new Date().getTime() + durationMinutes * 60000;
+    localStorage.setItem('raag_promo_end', endTime);
+  }
+  
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const now = new Date().getTime();
+    const distance = parseInt(endTime) - now;
+    
+    if (distance < 0) {
+      clearInterval(timerInterval);
+      document.getElementById('announcementTimerEl').innerText = "00:00";
+      return;
+    }
+    
+    const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((distance % (1000 * 60)) / 1000);
+    document.getElementById('announcementTimerEl').innerText = String(m).padStart(2, '0') + ":" + String(s).padStart(2, '0');
+  }, 1000);
+}
+
 function getProduct(id){ return PRODUCTS.find(p => p.id === id); }
 function formatPrice(n){ return STORE_CONFIG.currency + " " + (n || 0).toLocaleString("en-PK"); }
 
@@ -1250,8 +1389,50 @@ function removeFromCart(productId, size){
   saveCart();
   renderCartBadge(); renderDrawer(); if(currentRoute === "/cart") render();
 }
+let appliedPromoCode = null;
+
 function cartCount(){ return cart.reduce((s,l)=>s+l.qty,0); }
 function cartSubtotal(){ return cart.reduce((s,l)=>{ const p = getProduct(l.productId); return s + (p ? p.price*l.qty : 0); },0); }
+function cartPromoSubtotal(){ 
+  if(!appliedPromoCode) return cartSubtotal();
+  return cart.reduce((s,l)=>{ 
+    const p = getProduct(l.productId); 
+    const priceToUse = (p && p.promoPrice) ? p.promoPrice : (p ? p.price : 0);
+    return s + (priceToUse * l.qty);
+  }, 0); 
+}
+
+async function applyPromoCode(code) {
+  if (!code) { showToast("Enter promo code"); return; }
+  let promos = [];
+  try {
+    const res = await fetch('/api/promocodes');
+    if (res.ok) promos = await res.json();
+  } catch(e) {}
+  
+  if (promos.length === 0) {
+    promos = JSON.parse(localStorage.getItem('raag_promocodes') || '[]');
+  }
+  
+  const valid = promos.find(p => p.code.toUpperCase() === code.toUpperCase() && p.status);
+  if (valid && (!valid.expiry_date || new Date(valid.expiry_date) > new Date())) {
+    appliedPromoCode = code.toUpperCase();
+    showToast("Promo Code Applied");
+    navigate();
+    renderCartBadge();
+    renderDrawer();
+    return;
+  }
+  
+  showToast("Invalid Promo Code");
+}
+
+function removePromoCode() {
+  appliedPromoCode = null;
+  navigate();
+  renderCartBadge();
+  renderDrawer();
+}
 
 function renderCartBadge(){
   document.getElementById("cartBadge").textContent = cartCount();
@@ -1464,10 +1645,28 @@ function renderDrawer(){
   }).join("");
 
   const subtotal = cartSubtotal();
+  const promoSubtotal = cartPromoSubtotal();
+  const discount = subtotal - promoSubtotal;
   const delivery = STORE_CONFIG.deliveryCharge;
-  const total = subtotal + delivery;
+  const total = promoSubtotal + delivery;
   footer.innerHTML = `
+    <div style="margin-bottom:var(--lg);">
+      ${appliedPromoCode ? 
+        `<div class="flex-between">
+          <span style="color:var(--state-success);">Promo applied: <strong>${appliedPromoCode}</strong></span>
+          <button class="btn-link" onclick="removePromoCode()">Remove</button>
+        </div>` : 
+        `<div class="field" style="margin:0;">
+          <label style="font-size:0.75rem;">Have a promo code?</label>
+          <div style="display:flex; gap:var(--sm);">
+            <input type="text" id="promoInputDrawer" placeholder="Enter promo code" style="text-transform:uppercase; font-size:0.8rem; padding:6px;" />
+            <button class="btn btn-secondary" style="padding:6px 12px; font-size:0.75rem;" onclick="applyPromoCode(document.getElementById('promoInputDrawer').value)">APPLY</button>
+          </div>
+        </div>`
+      }
+    </div>
     <div class="summary-row"><span>Subtotal</span><span class="t-price">${formatPrice(subtotal)}</span></div>
+    ${appliedPromoCode ? `<div class="summary-row" style="color:var(--state-success);"><span>Promo Discount</span><span class="t-price">-${formatPrice(discount)}</span></div>` : ''}
     <div class="summary-row"><span>Delivery</span><span class="t-price">${formatPrice(delivery)}</span></div>
     <div class="summary-row total"><span>Total</span><span>${formatPrice(total)}</span></div>
     <a href="#/checkout" class="btn btn-primary btn-block mt-md" onclick="closeDrawer()">Checkout</a>
@@ -1490,7 +1689,7 @@ function productCard(p){
     <div class="product-meta">
       <div class="product-title">${p.name}</div>
       <div class="product-cat">${p.category}</div>
-      <div class="product-price">${formatPrice(p.price)}${p.compareAt ? ` <span style="color:var(--text-tertiary); text-decoration:line-through; margin-left:6px;">${formatPrice(p.compareAt)}</span>` : ""}</div>
+      <div class="product-price">${p.compareAt ? `<span style="color:var(--text-tertiary); text-decoration:line-through; margin-right:6px;">${formatPrice(p.compareAt)}</span> ` : ""}${formatPrice(p.price)}</div>
     </div>
   </a>`;
 }
@@ -1734,7 +1933,7 @@ function renderProduct(id){
       <div class="pdp-info">
         <p class="t-label-mono eyebrow mb-sm">${p.edition || 'DROP 004'}</p>
         <h1 class="t-headline-xl">${p.name}</h1>
-        <p class="t-price mt-sm" style="font-size:1.25rem;">${formatPrice(p.price)}${p.compareAt ? ` <span style="color:var(--text-tertiary); text-decoration:line-through; margin-left:8px; font-size:1rem;">${formatPrice(p.compareAt)}</span>` : ""}</p>
+        <p class="t-price mt-sm" style="font-size:1.25rem;">${p.compareAt ? `<span style="color:var(--text-tertiary); text-decoration:line-through; margin-right:8px; font-size:1rem;">${formatPrice(p.compareAt)}</span> ` : ""}${formatPrice(p.price)}</p>
         <p class="t-body-md text-secondary mt-md" style="max-width:480px;">${p.description || ""}</p>
 
         <div class="mt-xl">
@@ -1937,7 +2136,11 @@ function renderCartPage(){
       <a href="#/collection" class="btn btn-primary">Shop Collection</a>
     </section>`;
   }
-  const subtotal = cartSubtotal(); const delivery = STORE_CONFIG.deliveryCharge; const total = subtotal+delivery;
+  const subtotal = cartSubtotal(); 
+  const promoSubtotal = cartPromoSubtotal();
+  const discount = subtotal - promoSubtotal;
+  const delivery = STORE_CONFIG.deliveryCharge; 
+  const total = promoSubtotal+delivery;
   return `
   <section class="section container">
     <h1 class="t-headline-xl mb-lg">Bag <span class="text-tertiary">// ${String(cartCount()).padStart(2,"0")} Items</span></h1>
@@ -1953,7 +2156,7 @@ function renderCartPage(){
             </div>
             <span class="cart-line-variant">Size ${line.size}</span>
             <div class="qty-stepper">
-              <button onclick="updateQty('${line.productId}','${line.size}',-1)">–</button>
+              <button onclick="updateQty('${line.productId}','${line.size}',-1)">-</button>
               <span>${String(line.qty).padStart(2,"0")}</span>
               <button onclick="updateQty('${line.productId}','${line.size}',1)">+</button>
             </div>
@@ -1961,11 +2164,29 @@ function renderCartPage(){
           </div>
         </div>`;
       }).join("")}
-      <div class="mt-lg">
+      
+      <div style="margin-top:var(--xl); padding:var(--lg); background:var(--bg-surface-elevated); border:1px solid var(--border-subtle);">
+        <div style="margin-bottom:var(--lg);">
+          ${appliedPromoCode ? 
+            `<div class="flex-between">
+              <span style="color:var(--state-success);">Promo code applied: <strong>${appliedPromoCode}</strong></span>
+              <button class="btn-link" onclick="removePromoCode()">Remove</button>
+            </div>` : 
+            `<div class="field" style="margin:0;">
+              <label>Have a promo code?</label>
+              <div style="display:flex; gap:var(--sm);">
+                <input type="text" id="promoInputCart" placeholder="Enter promo code" style="text-transform:uppercase;" />
+                <button class="btn btn-secondary" onclick="applyPromoCode(document.getElementById('promoInputCart').value)">APPLY</button>
+              </div>
+            </div>`
+          }
+        </div>
+
         <div class="summary-row"><span>Subtotal</span><span class="t-price">${formatPrice(subtotal)}</span></div>
+        ${appliedPromoCode ? `<div class="summary-row" style="color:var(--state-success);"><span>Promo Discount</span><span class="t-price">-${formatPrice(discount)}</span></div>` : ''}
         <div class="summary-row"><span>Delivery</span><span class="t-price">${formatPrice(delivery)}</span></div>
         <div class="summary-row total"><span>Total</span><span>${formatPrice(total)}</span></div>
-        <a href="#/checkout" class="btn btn-primary btn-block mt-md">Checkout</a>
+        <a href="#/checkout" class="btn btn-primary btn-block mt-lg">Checkout</a>
       </div>
     </div>
   </section>`;
@@ -1982,7 +2203,11 @@ function renderCheckout(){
       <a href="#/collection" class="btn btn-primary">Shop Collection</a>
     </section>`;
   }
-  const subtotal = cartSubtotal(); const delivery = STORE_CONFIG.deliveryCharge; const total = subtotal+delivery;
+  const subtotal = cartSubtotal(); 
+  const promoSubtotal = cartPromoSubtotal();
+  const discount = subtotal - promoSubtotal;
+  const delivery = STORE_CONFIG.deliveryCharge; 
+  const total = promoSubtotal+delivery;
   return `
   <section class="section container">
     <h1 class="t-headline-xl mb-lg">Checkout</h1>
@@ -2018,9 +2243,10 @@ function renderCheckout(){
         <div style="border:1px solid var(--border-subtle); padding:var(--lg);">
           ${cart.map(line=>{
             const p = getProduct(line.productId);
-            return `<div class="flex-between mb-sm"><span class="t-body-sm">${p ? p.name : line.productId} · ${line.size} · x${line.qty}</span><span class="t-price">${formatPrice(p ? p.price*line.qty : 0)}</span></div>`;
+            return `<div class="flex-between mb-sm"><span class="t-body-sm">${p ? p.name : line.productId} — ${line.size} — x${line.qty}</span><span class="t-price">${formatPrice(p ? p.price*line.qty : 0)}</span></div>`;
           }).join("")}
           <div class="summary-row mt-md"><span>Subtotal</span><span class="t-price">${formatPrice(subtotal)}</span></div>
+          ${appliedPromoCode ? `<div class="summary-row" style="color:var(--state-success);"><span>Promo Discount</span><span class="t-price">-${formatPrice(discount)}</span></div>` : ''}
           <div class="summary-row"><span>Delivery</span><span class="t-price">${formatPrice(delivery)}</span></div>
           <div class="summary-row total"><span>Total</span><span>${formatPrice(total)}</span></div>
           <p class="t-body-sm text-tertiary mt-md">Payment: Cash on Delivery</p>
@@ -2052,6 +2278,7 @@ async function handlePlaceOrder(e){
   if(hasError){ showToast("Please fill in required fields"); return false; }
 
   const subtotal = cartSubtotal();
+  const promoSubtotal = cartPromoSubtotal();
   const delivery = STORE_CONFIG.deliveryCharge;
   const order = {
     orderId: generateOrderId(),
@@ -2065,7 +2292,10 @@ async function handlePlaceOrder(e){
     whatsapp: (data.whatsapp||"").trim(),
     notes: (data.notes||"").trim(),
     items: cart.map(l=>({productId:l.productId, size:l.size, qty:l.qty})),
-    subtotal, deliveryCharges: delivery, total: subtotal+delivery,
+    subtotal: subtotal, 
+    deliveryCharges: delivery, 
+    total: promoSubtotal+delivery,
+    promoCode: appliedPromoCode,
     paymentMethod: "Cash on Delivery",
     createdAt: new Date().toISOString(),
     status: "New"
@@ -2205,6 +2435,8 @@ const ADMIN_TABS = [
   {id:"customers", label:"Customers"},
   {id:"community", label:"Community"},
   {id:"reviews", label:"Reviews"},
+  {id:"promocodes", label:"Promo Codes"},
+  {id:"announcement", label:"Announcement"},
   {id:"settings", label:"Settings"}
 ];
 
@@ -2272,6 +2504,8 @@ async function renderAdmin(){
   else if(tab === "customers") content = await renderAdminCustomers();
   else if(tab === "community") content = renderAdminCommunity();
   else if(tab === "reviews") content = renderAdminReviews();
+  else if(tab === "promocodes") content = await renderAdminPromoCodes();
+  else if(tab === "announcement") content = await renderAdminAnnouncement();
   else if(tab === "settings") content = renderAdminSettings();
   else if(tab === "order" ) content = renderAdminOrderDetail(routeSubParam);
 
@@ -2520,7 +2754,9 @@ function openAdminProductModal(id = null){
         <h2 class="t-headline-md mb-md" id="adminModalTitle">Edit Product</h2>
         <div class="field"><label>Name</label><input type="text" id="adminProdName" /></div>
         <div class="field-row">
-          <div class="field"><label>Price (Rs.)</label><input type="number" id="adminProdPrice" /></div>
+          <div class="field"><label>Original Price (Rs.)</label><input type="number" id="adminProdCompareAt" /></div>
+          <div class="field"><label>Sale Price (Rs.)</label><input type="number" id="adminProdPrice" /></div>
+          <div class="field"><label>Promo Discounted Price (Rs.)</label><input type="number" id="adminProdPromoPrice" /></div>
           <!-- Removed Status dropdown -->
         </div>
         <div class="field-row">
@@ -2555,7 +2791,9 @@ function openAdminProductModal(id = null){
     const p = getProduct(id);
     document.getElementById("adminModalTitle").textContent = "Edit Product";
     document.getElementById("adminProdName").value = p.name;
+    document.getElementById("adminProdCompareAt").value = p.compareAt || "";
     document.getElementById("adminProdPrice").value = p.price;
+    document.getElementById("adminProdPromoPrice").value = p.promoPrice || "";
     document.getElementById("adminProdSizes").value = (p.sizes||[]).join(", ");
     document.getElementById("adminProdOOS").value = (p.outOfStockSizes||[]).join(", ");
     document.getElementById("adminProdBestSeller").checked = !!p.bestSeller;
@@ -2564,7 +2802,9 @@ function openAdminProductModal(id = null){
   } else {
     document.getElementById("adminModalTitle").textContent = "Add Product";
     document.getElementById("adminProdName").value = "";
+    document.getElementById("adminProdCompareAt").value = "";
     document.getElementById("adminProdPrice").value = "";
+    document.getElementById("adminProdPromoPrice").value = "";
     document.getElementById("adminProdSizes").value = "S, M, L, XL";
     document.getElementById("adminProdOOS").value = "";
     document.getElementById("adminProdBestSeller").checked = false;
@@ -2625,6 +2865,10 @@ async function confirmDeleteProduct() {
 async function saveAdminProduct(){
   const name = document.getElementById("adminProdName").value;
   const price = parseInt(document.getElementById("adminProdPrice").value, 10);
+  const compareAtVal = document.getElementById("adminProdCompareAt").value;
+  const promoPriceVal = document.getElementById("adminProdPromoPrice").value;
+  const compareAt = compareAtVal ? parseInt(compareAtVal, 10) : null;
+  const promoPrice = promoPriceVal ? parseInt(promoPriceVal, 10) : null;
   const soldOut = document.getElementById("adminProdSoldOut").checked;
   const sizesRaw = document.getElementById("adminProdSizes").value;
   const oosRaw = document.getElementById("adminProdOOS").value;
@@ -2642,6 +2886,8 @@ async function saveAdminProduct(){
     if(p) {
       p.name = name || p.name;
       p.price = isNaN(price) ? p.price : price;
+      p.compareAt = compareAt;
+      p.promoPrice = promoPrice;
       p.soldOut = soldOut;
       p.sizes = sizesArr;
       p.outOfStockSizes = oosArr;
@@ -2656,7 +2902,8 @@ async function saveAdminProduct(){
       name: name || "New Product",
       category: "Category",
       price: isNaN(price) ? 0 : price,
-      compareAt: null,
+      compareAt: compareAt,
+      promoPrice: promoPrice,
       glyph: GLYPHS.jacket,
       images: [],
       sizes: sizesArr,
@@ -2808,6 +3055,134 @@ function deleteReview(id) {
   showToast("Review deleted");
 }
 
+async function renderAdminPromoCodes(){
+  let promos = [];
+  try {
+    const res = await fetch('/api/promocodes');
+    if (res.ok) promos = await res.json();
+  } catch(e) {}
+  
+  if (promos.length === 0) {
+    promos = JSON.parse(localStorage.getItem('raag_promocodes') || '[]');
+  }
+  
+  let rows = promos.map(p => `
+    <tr>
+      <td>${p.code}</td>
+      <td>${p.status ? 'Active' : 'Disabled'}</td>
+      <td>
+        <button class="btn-link" onclick="deletePromoCode('${p.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+
+  if(!rows) rows = `<tr><td colspan="3">No promo codes found.</td></tr>`;
+
+  return `
+  <div class="admin-section-head">
+    <h1 class="t-headline-lg">Promo Codes</h1>
+    <button class="btn btn-primary" onclick="addPromoCode()">Add Promo Code</button>
+  </div>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>Code</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+  `;
+}
+
+async function addPromoCode() {
+  const code = prompt("Enter new promo code (e.g. RAAG):");
+  if(!code) return;
+  const newPromo = { id: 'promo-' + Date.now(), code: code.toUpperCase(), status: true };
+  try {
+    await fetch('/api/promocodes', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(newPromo)
+    });
+  } catch(e) {}
+  
+  let promos = JSON.parse(localStorage.getItem('raag_promocodes') || '[]');
+  promos.unshift(newPromo);
+  localStorage.setItem('raag_promocodes', JSON.stringify(promos));
+  
+  navigate();
+  loadAnnouncement();
+}
+
+async function deletePromoCode(id) {
+  if(!confirm("Delete this promo code?")) return;
+  try {
+    await fetch('/api/promocodes?id=' + id, { method: 'DELETE' });
+  } catch(e) {}
+  
+  let promos = JSON.parse(localStorage.getItem('raag_promocodes') || '[]');
+  promos = promos.filter(p => String(p.id) !== String(id));
+  localStorage.setItem('raag_promocodes', JSON.stringify(promos));
+  
+  navigate();
+  loadAnnouncement();
+}
+
+async function renderAdminAnnouncement(){
+  let s = { is_active: false, show_timer: false, timer_duration: 60, text: 'Use promo code RAAG to get exclusive discount on your favourite design', promo_code: 'RAAG' };
+  try {
+    const res = await fetch('/api/settings');
+    if (res.ok) {
+        const data = await res.json();
+        if(data && Object.keys(data).length > 0) s = data;
+    }
+  } catch(e) {}
+
+  return `
+  <div class="admin-section-head"><h1 class="t-headline-lg">Announcement / Promotion Settings</h1></div>
+  <div style="max-width:600px; background:var(--bg-surface-elevated); padding:var(--lg); border:1px solid var(--border-subtle);">
+    <div class="field-row mb-md">
+      <div class="checkbox-row">
+        <input type="checkbox" id="announcementActive" ${s.is_active ? 'checked' : ''} style="width:auto; height:auto;"/>
+        <label for="announcementActive" style="margin:0;">Turn announcement ON</label>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="announcementTimer" ${s.show_timer ? 'checked' : ''} style="width:auto; height:auto;"/>
+        <label for="announcementTimer" style="margin:0;">Turn countdown timer ON</label>
+      </div>
+    </div>
+    <div class="field"><label>Timer Duration (Minutes)</label><input type="number" id="announcementDuration" value="${s.timer_duration}" /></div>
+    <div class="field"><label>Announcement Text (use {code} to insert promo code dynamically)</label><textarea id="announcementText">${s.text}</textarea></div>
+    <div class="field"><label>Displayed Promo Code</label><input type="text" id="announcementPromoCode" value="${s.promo_code}" /></div>
+    <button class="btn btn-primary" onclick="saveAdminAnnouncement()">Save Settings</button>
+  </div>
+  `;
+}
+
+async function saveAdminAnnouncement() {
+  const data = {
+    is_active: document.getElementById("announcementActive").checked,
+    show_timer: document.getElementById("announcementTimer").checked,
+    timer_duration: parseInt(document.getElementById("announcementDuration").value, 10),
+    text: document.getElementById("announcementText").value,
+    promo_code: document.getElementById("announcementPromoCode").value
+  };
+  try {
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+  } catch(e) {}
+  localStorage.setItem('raag_announcement', JSON.stringify(data));
+  // force timer reset if saved
+  if(data.show_timer) {
+    localStorage.removeItem('raag_promo_end');
+    if(timerInterval) clearInterval(timerInterval);
+    document.getElementById('announcementTimerEl').innerText = "";
+  }
+  showToast("Announcement settings saved.");
+  loadAnnouncement();
+}
+
 function renderAdminSettings(){
   return `
   <div class="admin-section-head"><h1 class="t-headline-lg">Settings</h1></div>
@@ -2869,6 +3244,7 @@ async function render(){
    ============================================================ */
 async function bootstrap() {
   await loadProducts();
+  await loadAnnouncement();
   if (adminAuthed) await loadAdminData();
   navigate();
   renderCartBadge();
