@@ -1,6 +1,6 @@
 const supabase = require('./_supabase');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method === 'GET') {
     const { data, error } = await supabase
       .from('customers')
